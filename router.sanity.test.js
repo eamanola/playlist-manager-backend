@@ -1,0 +1,85 @@
+const supertest = require('supertest');
+const yup = require('yup');
+const { rm } = require('node:fs/promises');
+
+const app = require('../app');
+const { cachePath } = require('./create-thumbnails');
+
+const api = supertest(app);
+
+// This is quick test
+// Test files not provided
+// make sure MEDIA_LIBS contain 1 video
+// make sure config is setup
+
+describe('test paths', () => {
+  describe('GET /videos', () => {
+    it('should fetch a list', async () => {
+      const { body, status } = await api.get('/videos');
+      expect({ body, status }).toEqual({ body: expect.any(Array), status: 200 });
+    });
+
+    it('schema', async () => {
+      const { body: videos } = await api.get('/videos');
+
+      const schema = yup.array().of(
+        yup.object().shape({
+          mediaLib: yup.string().required(),
+          videos: yup.array().of(yup.string()).required(),
+        }).noUnknown().strict(),
+      );
+
+      try {
+        await schema.validate(videos);
+        expect(true).toBe(true);
+      } catch {
+        expect(true).toBe(false);
+      }
+    });
+  });
+
+  describe('GET /durations', () => {
+    it('should fetch a list', async () => {
+      const { body, status } = await api.get('/durations');
+      expect({ body, status }).toEqual({ body: expect.any(Array), status: 200 });
+    });
+
+    it('schema', async () => {
+      const { body: durations } = await api.get('/durations');
+
+      const schema = yup.array().of(
+        yup.object().shape({
+          duration: yup.string().required(),
+          path: yup.string().required(),
+        }).noUnknown().strict(),
+      );
+
+      try {
+        await schema.validate(durations);
+        expect(true).toBe(true);
+      } catch {
+        expect(true).toBe(false);
+      }
+    });
+  });
+
+  describe('thumbnails', () => {
+    const cacheId = 'foo';
+
+    afterAll(async () => rm(cachePath(cacheId)));
+
+    it('POST /create-thumbnails should return 200', async () => {
+      const { body: mediaLibs } = await api.get('/videos');
+      const path = mediaLibs[0].videos[0];
+
+      const { status } = await api.post('/create-thumbnails').send([{ cacheId, path }]);
+      expect(status).toBe(200);
+    });
+
+    it('GET /thumbnails/:id should return image', async () => {
+      const { status, type } = await api.get(`/thumbnails/${cacheId}.jpg`);
+      expect(/image/iu.test(type)).toBe(true);
+      expect(status).toBe(200);
+    });
+  });
+});
