@@ -15,7 +15,7 @@ const { errorHandler } = middlewares;
 const router = express.Router();
 router.post('/create-thumbnails', createThumbnails);
 router.get('/durations', durations);
-router.put('/play', play);
+router.put('/play/:id?', play);
 router.use('/played', played);
 router.use('/thumbnails', express.static(THUMB_DIR));
 router.get('/videos', videos);
