@@ -27,12 +27,13 @@ const createThumbnail = async (cacheId, path) => {
   const output = cachePath(cacheId);
 
   if (!(await exists(output))) {
-    logger.info('create thumb', path);
+    // logger.info('create thumb', path);
     const input = path;
     await thumbnail(input, output);
-  } else {
-    logger.info('skip create thumb', path);
   }
+  // else {
+  //   logger.info('skip create thumb', path);
+  // }
 
   return output;
 };
