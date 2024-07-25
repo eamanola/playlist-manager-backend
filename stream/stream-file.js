@@ -1,5 +1,9 @@
 const fs = require('node:fs');
 
+const { utils } = require('automata-utils');
+
+const { logger } = utils;
+
 const sleep = (ms) => (new Promise((resolve) => { setTimeout(resolve, ms); }));
 
 const streamFile = async (path, res, { sleepMS }) => {
@@ -20,10 +24,10 @@ const streamFile = async (path, res, { sleepMS }) => {
     // eslint-disable-next-line no-await-in-loop
     await sleep(sleepMS);
 
-    console.log('sent:', bytesRead, 'have:', fs.statSync(path).size);
+    logger.info('sent:', bytesRead, 'have:', fs.statSync(path).size);
   } while (bytesRead < fs.statSync(path).size);
 
-  console.log('done');
+  logger.info('done');
 };
 
 module.exports = streamFile;

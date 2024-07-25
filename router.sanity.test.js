@@ -87,8 +87,7 @@ describe('test paths', () => {
       try {
         await schema.validate(probes, { strict: true, stripUnknown: false });
         expect(true).toBe(true);
-      } catch (err) {
-        console.log(err);
+      } catch {
         expect(true).toBe(false);
       }
     });

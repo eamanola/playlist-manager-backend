@@ -1,22 +1,36 @@
-const { mkdir } = require('node:fs/promises');
+const {
+  mkdir, rm, access, constants, readFile,
+} = require('node:fs/promises');
+const { exec } = require('node:child_process');
+const kill = require('tree-kill');
 
 const streamFile = require('./stream-file');
 const { CACHE_DIR } = require('../config');
-const exec = require('../cli/exec-promisified');
+// const exec = require('../cli/exec-promisified');
 
 const sleep = (ms) => (new Promise((resolve) => { setTimeout(resolve, ms); }));
 
-const extractStream = async (input, streamIndex, codecOptions, output) => {
-  const cmd = [
-    'ffmpeg -y',
-    `-i "${input}"`,
-    `-map 0:${streamIndex}`,
-    codecOptions || '-c copy',
-    `"${output}"`,
-  ].join(' ');
+const exists = async (path) => {
+  try {
+    await access(path, constants.F_OK);
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
 
-  console.log(cmd);
-  return exec(cmd);
+const extractStream = (input, streamIndex, codecOptions, output) => {
+  const cmd = 'ffmpeg';
+  const args = [
+    '-y',
+    '-i', `"${input}"`,
+    '-map', `0:${streamIndex}`,
+    ...(codecOptions || '-c copy').split(' '),
+    `"${output}"`,
+  ];
+
+  console.log(cmd, args);
+  return exec([cmd, ...args].join(' '));
 };
 // const cmd = [
 //   'ffmpeg',
@@ -33,7 +47,7 @@ const setupParams = async (type, path, streamIndex, transcode) => {
   const tempDir = `${CACHE_DIR}/${path.replace(/\//gu, '-')}/${type}`;
   await mkdir(tempDir, { recursive: true });
 
-  const tempFile = `${tempDir}/${streamIndex}${transcode ? 'tr' : ''}.mp4`;
+  const output = `${tempDir}/${streamIndex}${transcode ? 'tr' : ''}.mp4`;
 
   const sleepMS = !transcode ? 1000 : 5000;
 
@@ -53,7 +67,7 @@ const setupParams = async (type, path, streamIndex, transcode) => {
     }
   }
 
-  return { codecOptions, sleepMS, tempFile };
+  return { codecOptions, output, sleepMS };
 };
 
 const stream = (type) => async (req, res) => {
@@ -61,14 +75,33 @@ const stream = (type) => async (req, res) => {
 
   const { path, streamIndex, transcode } = params;
 
-  const { codecOptions, sleepMS, tempFile } = await setupParams(type, path, streamIndex, transcode);
-
-  extractStream(path, streamIndex, codecOptions, tempFile);
+  const { codecOptions, output, sleepMS } = await setupParams(type, path, streamIndex, transcode);
 
   res.setHeader('content-type', 'video/mp4');
-  await sleep(1000);
 
-  await streamFile(tempFile, res, { sleepMS });
+  if (!(await exists(output))) {
+    const proc = extractStream(path, streamIndex, codecOptions, output);
+
+    req.on('close', () => {
+      if (proc.exitCode === null) {
+        console.log('Stopping transcode, killing', proc.pid);
+        kill(proc.pid, 'SIGKILL', () => {
+          rm(output);
+        });
+      }
+    });
+
+    // proc.stdout.on('data', (data) => console.log(data));
+
+    await sleep(1000);
+    try {
+      await streamFile(output, res, { sleepMS });
+    } catch (err) {
+      console.log(err);
+    }
+  } else {
+    res.send(await readFile(output));
+  }
 
   res.status(200);
   res.end();
