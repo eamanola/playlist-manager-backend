@@ -29,7 +29,7 @@ const extractStream = (input, streamIndex, codecOptions, output) => {
     `"${output}"`,
   ];
 
-  console.log(cmd, args);
+  console.log([cmd, ...args].join(' '));
   return exec([cmd, ...args].join(' '));
 };
 // const cmd = [
@@ -77,7 +77,7 @@ const stream = (type) => async (req, res) => {
 
   const { codecOptions, output, sleepMS } = await setupParams(type, path, streamIndex, transcode);
 
-  res.setHeader('content-type', 'video/mp4');
+  res.setHeader('content-type', `${type}/mp4`);
 
   if (!(await exists(output))) {
     const proc = extractStream(path, streamIndex, codecOptions, output);
