@@ -1,14 +1,14 @@
 const { access, constants, mkdir } = require('node:fs/promises');
 const { join } = require('node:path');
 const { array, string, object } = require('yup');
-const { errors, utils } = require('automata-utils');
+const { errors/* , utils */ } = require('automata-utils');
 
 const canAccess = require('./utils/can-access');
 const thumbnail = require('./cli/thumbnail');
 const { THUMB_DIR } = require('./config');
 
 const { accessDenied, createParamError } = errors;
-const { logger } = utils;
+// const { logger } = utils;
 
 mkdir(THUMB_DIR, { recursive: true });
 
