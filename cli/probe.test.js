@@ -1,7 +1,7 @@
-const duration = require('./duration');
+const probe = require('./probe');
 const exec = require('./exec-promisified');
 
-describe('duration', () => {
+describe('probe', () => {
   it('ffprobe should be installed', () => {
     try {
       const help = exec('ffprobe --help');
@@ -13,7 +13,7 @@ describe('duration', () => {
 
   it('should throw, if file doesn exist', async () => {
     try {
-      await duration('foo');
+      await probe('foo');
       expect('should throw').toBe(true);
     } catch ({ message }) {
       expect(/Command failed/iu.test(message)).toBe(true);

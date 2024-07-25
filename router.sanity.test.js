@@ -38,26 +38,57 @@ describe('test paths', () => {
     });
   });
 
-  describe('GET /durations', () => {
+  describe('GET /probes', () => {
     it('should fetch a list', async () => {
-      const { body, status } = await api.get('/durations');
+      const { body, status } = await api.get('/probes');
       expect({ body, status }).toEqual({ body: expect.any(Array), status: 200 });
     });
 
     it('schema', async () => {
-      const { body: durations } = await api.get('/durations');
+      const { body: probes } = await api.get('/probes');
 
       const schema = yup.array().of(
         yup.object().shape({
-          duration: yup.string().required(),
           path: yup.string().required(),
+          probe: yup.object().shape({
+            audios: yup.array().of(
+              yup.object().shape({
+                index: yup.number().required(),
+                language: yup.string().required(),
+              }).noUnknown().strict(),
+            ).required(),
+            chapters: yup.array().of(
+              yup.object().shape({
+                end: yup.number().required(),
+                start: yup.number().required(),
+                title: yup.string(),
+              }).noUnknown().strict(),
+            ).required(),
+            duration: yup.number().required(),
+            format: yup.string().required(),
+            subtitles: yup.array().of(
+              yup.object().shape({
+                index: yup.number().required(),
+                language: yup.string().required(),
+                title: yup.string(),
+              }).noUnknown().strict(),
+            ).required(),
+            video: yup.object().shape({ index: yup.number().required() })
+              .noUnknown()
+              .strict()
+              .required(),
+          })
+            .noUnknown()
+            .strict()
+            .required(),
         }).noUnknown().strict(),
       );
 
       try {
-        await schema.validate(durations);
+        await schema.validate(probes, { strict: true, stripUnknown: false });
         expect(true).toBe(true);
-      } catch {
+      } catch (err) {
+        console.log(err);
         expect(true).toBe(false);
       }
     });
