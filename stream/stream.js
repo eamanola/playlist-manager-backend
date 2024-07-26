@@ -23,6 +23,7 @@ const extractStream = (input, streamIndex, codecOptions, output) => {
   const cmd = 'ffmpeg';
   const args = [
     '-y',
+    // '-progress', 'pipe:1',
     '-i', `"${input}"`,
     '-map', `0:${streamIndex}`,
     ...(codecOptions || '-c copy').split(' '),
@@ -47,19 +48,24 @@ const setupParams = async (type, path, streamIndex, transcode) => {
   const tempDir = `${CACHE_DIR}/${path.replace(/\//gu, '-')}/${type}`;
   await mkdir(tempDir, { recursive: true });
 
-  const output = `${tempDir}/${streamIndex}${transcode ? 'tr' : ''}.mp4`;
-
   const sleepMS = !transcode ? 1000 : 5000;
+
+  let mime = 'video/mp4';
+  let extension = 'mp4';
 
   let codecOptions = null;
   if (transcode) {
     switch (type) {
       case 'audio':
-        codecOptions = '-c:a aac';
+        codecOptions = '-c:a libmp3lame -f mp3';
+        mime = 'audio/mp3';
+        extension = 'mp3';
         break;
 
       case 'video':
-        codecOptions = '-c:v h264_nvenc -pix_fmt yuv420p -movflags frag_keyframe+empty_moov';
+        codecOptions = '-c:v h264_nvenc -pix_fmt yuv420p -movflags frag_keyframe+empty_moov -f mp4';
+        mime = 'video/mp4';
+        extension = 'mp4';
         break;
 
       default:
@@ -67,7 +73,11 @@ const setupParams = async (type, path, streamIndex, transcode) => {
     }
   }
 
-  return { codecOptions, output, sleepMS };
+  const output = `${tempDir}/${streamIndex}${transcode ? 'tr' : ''}.${extension}`;
+
+  return {
+    codecOptions, mime, output, sleepMS,
+  };
 };
 
 const stream = (type) => async (req, res) => {
@@ -75,25 +85,34 @@ const stream = (type) => async (req, res) => {
 
   const { path, streamIndex, transcode } = params;
 
-  const { codecOptions, output, sleepMS } = await setupParams(type, path, streamIndex, transcode);
+  const {
+    codecOptions, mime, output, sleepMS,
+  } = await setupParams(type, path, streamIndex, transcode);
 
-  res.setHeader('content-type', `${type}/mp4`);
+  res.setHeader('content-type', mime);
 
   if (!(await exists(output))) {
     const proc = extractStream(path, streamIndex, codecOptions, output);
 
     req.on('close', () => {
       if (proc.exitCode === null) {
-        console.log('Stopping transcode, killing', proc.pid);
-        kill(proc.pid, 'SIGKILL', () => {
-          rm(output);
-        });
+        console.log(proc.pid, 'connection closed, killing');
+        kill(proc.pid, 'SIGKILL');
       }
     });
 
-    // proc.stdout.on('data', (data) => console.log(data));
+    // proc.stdout.on('data', (data) => console.log(`${data}`));
 
-    await sleep(1000);
+    proc.on('close', (code) => {
+      console.log(proc.pid, `exit code ${code}`);
+      if (code !== 0) {
+        console.log(proc.pid, 'removing temp');
+        rm(output);
+      }
+    });
+
+    await sleep(5000); // ?
+
     try {
       await streamFile(output, res, { sleepMS });
     } catch (err) {
