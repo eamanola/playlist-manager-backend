@@ -15,13 +15,13 @@ const { router: videos } = require('./videos');
 const { errorHandler } = middlewares;
 
 const router = express.Router();
-router.get('/audio/:streamIndex/:path/:transcode?', audio);
+router.use('/audio', audio);
 router.post('/create-thumbnails', createThumbnails);
 router.get('/probes', probes);
 router.put('/play/:id?', play);
 router.use('/played', played);
 router.use('/thumbnails', express.static(THUMB_DIR));
-router.get('/video/:streamIndex/:path/:transcode?', video);
+router.use('/video', video);
 router.get('/videos', videos);
 
 router.use(errorHandler(errors, { defaultTo500: false }));

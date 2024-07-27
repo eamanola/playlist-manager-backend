@@ -1,129 +1,18 @@
-const {
-  mkdir, rm, access, constants, readFile,
-} = require('node:fs/promises');
-const { exec } = require('node:child_process');
-const kill = require('tree-kill');
+const express = require('express');
 
-const streamFile = require('./stream-file');
-const { CACHE_DIR } = require('../config');
-// const exec = require('../cli/exec-promisified');
+const checkAccess = require('./check-access');
+const sendCached = require('./send-cached');
+const extractStream = require('./extract-stream');
+const transcodeStream = require('./transcode-stream');
 
-const sleep = (ms) => (new Promise((resolve) => { setTimeout(resolve, ms); }));
+const createRouter = (type) => {
+  const router = express.Router();
+  router.use('/:path/:streamIndex/:transcode?', checkAccess);
+  router.get('/:path/:streamIndex/:transcode?', sendCached(type));
+  router.get('/:path/:streamIndex/transcode', transcodeStream(type));
+  router.get('/:path/:streamIndex', extractStream(type));
 
-const exists = async (path) => {
-  try {
-    await access(path, constants.F_OK);
-    return true;
-  } catch (err) {
-    return false;
-  }
+  return router;
 };
 
-const extractStream = (input, streamIndex, codecOptions, output) => {
-  const cmd = 'ffmpeg';
-  const args = [
-    '-y',
-    // '-progress', 'pipe:1',
-    '-i', `"${input}"`,
-    '-map', `0:${streamIndex}`,
-    ...(codecOptions || '-c copy').split(' '),
-    `"${output}"`,
-  ];
-
-  console.log([cmd, ...args].join(' '));
-  return exec([cmd, ...args].join(' '));
-};
-// const cmd = [
-//   'ffmpeg',
-//   '-i input',
-//   '-map 0:v:0', // input_file_index:stream_type_specifier:stream_index (1st video stream)
-//   '-map 0:a:1', // input_file_index:stream_type_specifier:stream_index (2nd audio stream)
-//   '-c:v h264_nvenc -pix_fmt yuv420p -movflags frag_keyframe+empty_moov',
-//   '-c:a aac',
-//   // '-f mp4',
-//   '-o out.mp4',
-// ].join(' ');
-
-const setupParams = async (type, path, streamIndex, transcode) => {
-  const tempDir = `${CACHE_DIR}/${path.replace(/\//gu, '-')}/${type}`;
-  await mkdir(tempDir, { recursive: true });
-
-  const sleepMS = !transcode ? 1000 : 5000;
-
-  let mime = 'video/mp4';
-  let extension = 'mp4';
-
-  let codecOptions = null;
-  if (transcode) {
-    switch (type) {
-      case 'audio':
-        codecOptions = '-c:a libmp3lame -f mp3';
-        mime = 'audio/mp3';
-        extension = 'mp3';
-        break;
-
-      case 'video':
-        codecOptions = '-c:v h264_nvenc -pix_fmt yuv420p -movflags frag_keyframe+empty_moov -f mp4';
-        mime = 'video/mp4';
-        extension = 'mp4';
-        break;
-
-      default:
-        throw new Error('unknown type');
-    }
-  }
-
-  const output = `${tempDir}/${streamIndex}${transcode ? 'tr' : ''}.${extension}`;
-
-  return {
-    codecOptions, mime, output, sleepMS,
-  };
-};
-
-const stream = (type) => async (req, res) => {
-  const { params } = req;
-
-  const { path, streamIndex, transcode } = params;
-
-  const {
-    codecOptions, mime, output, sleepMS,
-  } = await setupParams(type, path, streamIndex, transcode);
-
-  res.setHeader('content-type', mime);
-
-  if (!(await exists(output))) {
-    const proc = extractStream(path, streamIndex, codecOptions, output);
-
-    req.on('close', () => {
-      if (proc.exitCode === null) {
-        console.log(proc.pid, 'connection closed, killing');
-        kill(proc.pid, 'SIGKILL');
-      }
-    });
-
-    // proc.stdout.on('data', (data) => console.log(`${data}`));
-
-    proc.on('close', (code) => {
-      console.log(proc.pid, `exit code ${code}`);
-      if (code !== 0) {
-        console.log(proc.pid, 'removing temp');
-        rm(output);
-      }
-    });
-
-    await sleep(5000); // ?
-
-    try {
-      await streamFile(output, res, { sleepMS });
-    } catch (err) {
-      console.log(err);
-    }
-  } else {
-    res.send(await readFile(output));
-  }
-
-  res.status(200);
-  res.end();
-};
-
-module.exports = stream;
+module.exports = createRouter;
