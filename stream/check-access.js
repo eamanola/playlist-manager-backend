@@ -11,7 +11,7 @@ const checkAccess = (req, res, next) => {
 
   let error = null;
 
-  if (!canAccess(path)) {
+  if (!canAccess(decodeURIComponent(path))) {
     error = accessDenied;
   }
 

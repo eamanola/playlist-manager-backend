@@ -4,7 +4,7 @@ const { createReadStream } = require('node:fs');
 const kill = require('tree-kill');
 const { utils } = require('automata-utils');
 
-const outputPath = require('./output-path');
+const { outputPath } = require('./output-path');
 const { codecOptions, extension, mime } = require('./format');
 
 const { logger } = utils;

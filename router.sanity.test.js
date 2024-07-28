@@ -65,9 +65,16 @@ describe('test paths', () => {
               }).noUnknown().strict(),
             ).required(),
             duration: yup.number().required(),
+            fonts: yup.array().of(
+              yup.object().shape({
+                filename: yup.string().required(),
+                mimetype: yup.string().required(),
+              }).noUnknown().strict(),
+            ).required(),
             format: yup.string().required(),
             subtitles: yup.array().of(
               yup.object().shape({
+                codec: yup.string().required(),
                 index: yup.number().required(),
                 language: yup.string().required(),
                 title: yup.string(),

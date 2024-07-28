@@ -3,7 +3,7 @@ const { readFile } = require('node:fs/promises');
 const { utils } = require('automata-utils');
 
 const exists = require('../utils/exists');
-const outputPath = require('./output-path');
+const { outputPath } = require('./output-path');
 const { extension, mime } = require('./format');
 
 const { logger } = utils;

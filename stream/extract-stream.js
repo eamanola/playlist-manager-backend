@@ -2,7 +2,7 @@ const { readFile, rm } = require('node:fs/promises');
 const { exec } = require('node:child_process');
 const { utils } = require('automata-utils');
 
-const outputPath = require('./output-path');
+const { outputPath } = require('./output-path');
 const { codecOptions, extension, mime } = require('./format');
 
 const { logger } = utils;
