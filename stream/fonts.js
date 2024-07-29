@@ -19,8 +19,7 @@ const dumpIfMissing = async (req, res, next) => {
 
     try {
       await exec(cmd, { cwd: dstDir });
-    } catch (err) {
-      // this successfully fails
+    } catch (err) { // this successfully fails
       if (await exists(font) !== true) {
         throw err;
       }

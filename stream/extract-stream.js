@@ -8,7 +8,7 @@ const { codecOptions, extension, mime } = require('./format');
 const { logger } = utils;
 
 const extractStream = (type) => async (req, res, next) => {
-  logger.info('extract');
+  logger.info('-- extract');
   const { params } = req;
 
   const { path, streamIndex } = params;
@@ -24,7 +24,7 @@ const extractStream = (type) => async (req, res, next) => {
     ...codecOptions(type, TRANSCODE).split(' '),
     `"${output}"`,
   ];
-  logger.info([cmd, ...args].join(' '));
+  logger.info('-', [cmd, ...args].join(' '));
 
   exec([cmd, ...args].join(' '), async (err) => {
     if (err) {

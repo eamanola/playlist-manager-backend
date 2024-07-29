@@ -9,40 +9,7 @@ const { codecOptions, extension, mime } = require('./format');
 
 const { logger } = utils;
 
-const transcodeStream = (type) => async (req, res, next) => {
-  logger.info('transcode');
-  const { params } = req;
-
-  const { path, streamIndex } = params;
-  const TRANSCODE = true;
-
-  const output = await outputPath(type, path, streamIndex, TRANSCODE, extension(type, TRANSCODE));
-
-  const cmd = 'ffmpeg';
-  const args = [
-    '-y', '-v', 'error', '-stats',
-    '-i', `"${path}"`,
-    '-map', `0:${streamIndex}`,
-    ...codecOptions(type, TRANSCODE).split(' '),
-    `"${output}"`,
-  ];
-  logger.info([cmd, ...args].join(' '));
-
-  res.setHeader('content-type', mime(type, TRANSCODE));
-  const proc = exec([cmd, ...args].join(' '), async (err) => {
-    logger.info(proc.pid, 'ending', 'error:', !!err);
-    if (err) {
-      // dont cache
-      rm(output);
-
-      next(err);
-    } else {
-      res.status(200).end();
-    }
-  });
-
-  logger.info(proc.pid, 'starting');
-
+const sendOutput = (output, res, proc) => {
   let start = 0;
   // progress goes to err by default
   proc.stderr.on('data', async (stderr) => {
@@ -66,13 +33,53 @@ const transcodeStream = (type) => async (req, res, next) => {
 
       logger.info(proc.pid, 'sent:', start);
     } else {
-      logger.info(proc.pid, 'trash:', `${stderr}`);
+      logger.info(proc.pid, '---- trash:', `${stderr}`);
     }
   });
+};
+
+const transcodeStream = (type) => async (req, res, next) => {
+  logger.info('-- transcode');
+
+  const { params } = req;
+
+  const { path, streamIndex } = params;
+  const TRANSCODE = true;
+  const output = await outputPath(type, path, streamIndex, TRANSCODE, extension(type, TRANSCODE));
+
+  res.setHeader('content-type', mime(type, TRANSCODE));
+
+  const cmd = 'ffmpeg';
+  const args = [
+    '-y', '-v', 'error', '-stats',
+    '-i', `"${path}"`,
+    '-map', `0:${streamIndex}`,
+    ...codecOptions(type, TRANSCODE).split(' '),
+    `"${output}"`,
+  ];
+  logger.info('-', [cmd, ...args].join(' '));
+
+  const proc = exec([cmd, ...args].join(' '), async (err) => {
+    logger.info(proc.pid, 'ending', 'error:', !!err);
+
+    if (err) {
+      rm(output); // dont cache
+
+      next(err);
+    } else {
+      res.status(200).end();
+    }
+  });
+  logger.info(proc.pid, 'starting');
+
+  sendOutput(output, res, proc);
 
   req.on('close', () => {
+    logger.info(proc.pid, 'connection closed');
+
     if (proc.exitCode === null) {
-      logger.info(proc.pid, 'connection closed, killing');
+      logger.info(proc.pid, 'killing');
+
       kill(proc.pid, 'SIGKILL');
     }
   });

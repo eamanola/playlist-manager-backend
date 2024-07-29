@@ -11,6 +11,7 @@ const outputDir = async (type, path) => {
 
   return tempDir;
 };
+
 const outputPath = async (type, path, streamIndex, transcode, extension) => {
   const output = [
     await outputDir(type, path),
