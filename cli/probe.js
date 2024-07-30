@@ -4,11 +4,11 @@ const escapePath = require('../utils/escape-path.js');
 const formatStreams = (streams) => {
   const [video] = streams
     .filter(({ codec_type: ct, tags }) => (ct === 'video' && !(/image/u.test(tags.mimetype))))
-    .map(({ index }) => ({ index }));
+    .map(({ index, codec_name: codec }) => ({ codec, index }));
 
   const audios = streams
     .filter(({ codec_type: ct }) => ct === 'audio')
-    .map(({ index, tags }) => ({ index, language: tags.language }));
+    .map(({ index, codec_name: codec, tags }) => ({ codec, index, language: tags?.language || 'und' }));
 
   const subtitles = streams
     .filter(({ codec_type: ct }) => ct === 'subtitle')
@@ -64,6 +64,7 @@ const probe = async (filePath) => {
     `-i "${escapePath(filePath)}"`,
   ].join(' ');
 
+  // console.log(cmd);
   const { stdout } = await exec(cmd);
 
   return format(stdout);

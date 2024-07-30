@@ -7,7 +7,7 @@ const { createNotFound } = require('./errors');
 const getVideos = async () => {
   try {
     const allFiles = await Promise.all(MEDIA_LIBS.map(
-      (mediaLib) => findFiles(mediaLib, { extentions: ['mp4', 'mkv'] }),
+      (mediaLib) => findFiles(mediaLib, { extentions: ['mp4', 'mkv', 'webm'] }),
     ));
 
     return allFiles.map((mediaLibFiles, index) => ({

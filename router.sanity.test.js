@@ -53,6 +53,7 @@ describe('test paths', () => {
           probe: yup.object().shape({
             audios: yup.array().of(
               yup.object().shape({
+                codec: yup.string().required(),
                 index: yup.number().required(),
                 language: yup.string().required(),
               }).noUnknown().strict(),
@@ -80,7 +81,10 @@ describe('test paths', () => {
                 title: yup.string(),
               }).noUnknown().strict(),
             ).required(),
-            video: yup.object().shape({ index: yup.number().required() })
+            video: yup.object().shape({
+              codec: yup.string().required(),
+              index: yup.number().required(),
+            })
               .noUnknown()
               .strict()
               .required(),

@@ -5,7 +5,7 @@ const kill = require('tree-kill');
 const { utils } = require('automata-utils');
 
 const { outputPath } = require('./output-path');
-const { codecOptions, extension, mime } = require('./format');
+const { transcode } = require('./format');
 
 const { logger } = utils;
 
@@ -31,7 +31,8 @@ const sendOutput = (output, res, proc) => {
 
       start += stream.bytesRead;
 
-      logger.info(proc.pid, 'sent:', start);
+      const [speed] = `${stderr}`.match(/speed=\s*\d+?(?:\.\d+)?x/u) || [];
+      logger.info(proc.pid, 'sent:', start, speed || `${stderr}`);
     } else {
       logger.info(proc.pid, '---- trash:', `${stderr}`);
     }
@@ -45,16 +46,20 @@ const transcodeStream = (type) => async (req, res, next) => {
 
   const { path, streamIndex } = params;
   const TRANSCODE = true;
-  const output = await outputPath(type, path, streamIndex, TRANSCODE, extension(type, TRANSCODE));
 
-  res.setHeader('content-type', mime(type, TRANSCODE));
+  const { codecOptions, extension, mime } = transcode(type);
+  console.log(codecOptions);
+
+  const output = await outputPath(type, path, streamIndex, TRANSCODE, extension);
+
+  res.setHeader('content-type', mime);
 
   const cmd = 'ffmpeg';
   const args = [
     '-y', '-v', 'error', '-stats',
     '-i', `"${path}"`,
     '-map', `0:${streamIndex}`,
-    ...codecOptions(type, TRANSCODE).split(' '),
+    ...codecOptions.split(' '),
     `"${output}"`,
   ];
   logger.info('-', [cmd, ...args].join(' '));

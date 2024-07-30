@@ -4,7 +4,7 @@ const { utils } = require('automata-utils');
 
 const exists = require('../utils/exists');
 const { outputPath } = require('./output-path');
-const { extension, mime } = require('./format');
+const { copy, transcode: transcodeOptions } = require('./format');
 
 const { logger } = utils;
 
@@ -15,12 +15,16 @@ const sendCached = (type) => async (req, res, next) => {
 
   const TRANSCODE = !!transcode;
 
-  const output = await outputPath(type, path, streamIndex, TRANSCODE, extension(type, TRANSCODE));
+  const { extension, mime } = TRANSCODE
+    ? transcodeOptions(type)
+    : (await copy(type, path, Number(streamIndex)));
+
+  const output = await outputPath(type, path, streamIndex, TRANSCODE, extension);
 
   if (await exists(output)) {
     logger.info('-- send cached');
 
-    res.setHeader('content-type', mime(type, TRANSCODE));
+    res.setHeader('content-type', mime);
     res.status(200).send(await readFile(output));
     res.end();
   } else {
