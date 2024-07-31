@@ -20,7 +20,7 @@ const router = express.Router();
 router.use('/audio', audio);
 router.post('/create-thumbnails', createThumbnails);
 router.use('/fonts', fonts);
-router.get('/probes', probes);
+router.post('/probes', probes);
 router.put('/play/:id?', play);
 router.use('/played', played);
 router.use('/thumbnails', express.static(THUMB_DIR));

@@ -40,12 +40,22 @@ describe('test paths', () => {
 
   describe('GET /probes', () => {
     it('should fetch a list', async () => {
-      const { body, status } = await api.get('/probes');
+      const paths = (await api.get('/videos'))
+        .body
+        .map(({ videos }) => videos)
+        .flat();
+
+      const { body, status } = await api.post('/probes').send(paths);
       expect({ body, status }).toEqual({ body: expect.any(Array), status: 200 });
     });
 
     it('schema', async () => {
-      const { body: probes } = await api.get('/probes');
+      const paths = (await api.get('/videos'))
+        .body
+        .map(({ videos }) => videos)
+        .flat();
+
+      const { body: probes } = await api.post('/probes').send(paths);
 
       const schema = yup.array().of(
         yup.object().shape({

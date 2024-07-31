@@ -1,8 +1,6 @@
-const { getVideos } = require('./videos');
 const probe = require('./cli/probe');
 
-const getProbes = async () => {
-  const paths = (await getVideos()).map(({ videos }) => videos).flat();
+const getProbes = async (paths) => {
   const probes = await Promise.all(paths.map((path) => probe(path)));
 
   return probes.map((probeObj, index) => ({
@@ -12,8 +10,10 @@ const getProbes = async () => {
 };
 
 const probes = async (req, res, next) => {
+  const { body: paths } = req;
+
   try {
-    res.status(200).json(await getProbes());
+    res.status(200).json(await getProbes(paths));
   } catch (err) {
     next(err);
   }
