@@ -48,7 +48,6 @@ const transcodeStream = (type) => async (req, res, next) => {
   const TRANSCODE = true;
 
   const { codecOptions, extension, mime } = transcode(type);
-  console.log(codecOptions);
 
   const output = await outputPath(type, path, streamIndex, TRANSCODE, extension);
 

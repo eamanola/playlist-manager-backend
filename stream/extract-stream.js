@@ -1,6 +1,7 @@
-const { readFile, rm } = require('node:fs/promises');
+const { rm } = require('node:fs/promises');
 const { exec } = require('node:child_process');
 const { utils } = require('automata-utils');
+const { createReadStream } = require('node:fs');
 
 const { outputPath } = require('./output-path');
 const { copy } = require('./format');
@@ -34,8 +35,8 @@ const extractStream = (type) => async (req, res, next) => {
       next(err);
     } else {
       res.setHeader('content-type', mime);
-      res.status(200).send(await readFile(output));
-      res.end();
+      res.status(200);
+      createReadStream(output).pipe(res);
     }
   });
 };
