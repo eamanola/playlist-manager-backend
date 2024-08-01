@@ -9,7 +9,20 @@ const { transcode } = require('./format');
 
 const { logger } = utils;
 
-const sendOutput = (output, res, proc) => {
+const logProgress = (pid, sent, stderr) => {
+  logger.info(pid, sent, `${stderr}`);
+
+  const match = `${stderr}`.match(/speed=\s*(?<speed>\d+?(?:\.\d+)?)x/u);
+  if (match) {
+    const { speed } = match.groups;
+
+    if (Number(speed) < 1 && sent > 100) {
+      logger.warn(pid, 'slow transcode, consider lowering quality');
+    }
+  }
+};
+
+const sendOutput = (proc, output, res) => {
   let start = 0;
   // progress goes to err by default
   proc.stderr.on('data', async (stderr) => {
@@ -31,27 +44,43 @@ const sendOutput = (output, res, proc) => {
 
       start += stream.bytesRead;
 
-      const [speed] = `${stderr}`.match(/speed=\s*\d+?(?:\.\d+)?x/u) || [];
-      logger.info(proc.pid, 'sent:', start, speed || `${stderr}`);
+      logProgress(proc.pid, start, stderr);
     } else {
       logger.info(proc.pid, '---- trash:', `${stderr}`);
     }
   });
 };
 
+const onEnd = (filepath, res, next) => async (err) => {
+  logger.info('onEnd', 'error:', !!err);
+
+  if (err) {
+    rm(filepath); // dont cache
+
+    next(err);
+  } else {
+    res.status(200).end();
+  }
+};
+
+const onConnectionClosed = (proc) => () => {
+  logger.info(proc.pid, 'connection closed');
+
+  if (proc.exitCode === null) {
+    logger.info(proc.pid, 'killing');
+
+    kill(proc.pid, 'SIGKILL');
+  }
+};
+
 const transcodeStream = (type) => async (req, res, next) => {
   logger.info('-- transcode');
 
   const { params } = req;
-
   const { path, streamIndex } = params;
   const TRANSCODE = true;
-
   const { codecOptions, extension, mime } = transcode(type);
-
   const output = await outputPath(type, path, streamIndex, TRANSCODE, extension);
-
-  res.setHeader('content-type', mime);
 
   const cmd = 'ffmpeg';
   const args = [
@@ -63,30 +92,14 @@ const transcodeStream = (type) => async (req, res, next) => {
   ];
   logger.info('-', [cmd, ...args].join(' '));
 
-  const proc = exec([cmd, ...args].join(' '), async (err) => {
-    logger.info(proc.pid, 'ending', 'error:', !!err);
-
-    if (err) {
-      rm(output); // dont cache
-
-      next(err);
-    } else {
-      res.status(200).end();
-    }
-  });
+  const proc = exec([cmd, ...args].join(' '), onEnd(output, res, next));
   logger.info(proc.pid, 'starting');
 
-  sendOutput(output, res, proc);
+  req.on('close', onConnectionClosed(proc));
 
-  req.on('close', () => {
-    logger.info(proc.pid, 'connection closed');
+  res.setHeader('content-type', mime);
 
-    if (proc.exitCode === null) {
-      logger.info(proc.pid, 'killing');
-
-      kill(proc.pid, 'SIGKILL');
-    }
-  });
+  sendOutput(proc, output, res);
 };
 
 module.exports = transcodeStream;
