@@ -1,4 +1,4 @@
-const { readFile } = require('node:fs/promises');
+const { createReadStream } = require('node:fs');
 
 const { utils } = require('automata-utils');
 
@@ -25,8 +25,8 @@ const sendCached = (type) => async (req, res, next) => {
     logger.info('-- send cached');
 
     res.setHeader('content-type', mime);
-    res.status(200).send(await readFile(output));
-    res.end();
+    res.status(200);
+    createReadStream(output).pipe(res);
   } else {
     next();
   }

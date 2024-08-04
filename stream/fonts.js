@@ -3,6 +3,8 @@ const { sep } = require('node:path');
 
 const exec = require('../cli/exec-promisified');
 const exists = require('../utils/exists');
+const escapePath = require('../utils/escape-path');
+
 const { outputDir } = require('./output-path');
 
 const checkAccess = require('./check-access');
@@ -15,7 +17,7 @@ const dumpIfMissing = async (req, res, next) => {
   const font = [dstDir, filename].join(sep);
 
   if (!await exists(font)) {
-    const cmd = `ffmpeg -dump_attachment:t "" -i "${decodeURIComponent(path)}"`;
+    const cmd = `ffmpeg -dump_attachment:t "" -i "${escapePath(decodeURIComponent(path))}"`;
 
     try {
       await exec(cmd, { cwd: dstDir });

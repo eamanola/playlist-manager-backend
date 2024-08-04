@@ -16,6 +16,8 @@ const isAV1 = (codec) => /av1/iu.test(codec);
 
 const SKIP_WARNING = [
   { codec: 'aac', format: 'matroska,webm' }, // container swap ok
+  { codec: 'flac', format: 'matroska,webm' }, // container swap ok
+  { codec: 'h264', format: 'matroska,webm' }, // container swap ok
   // { format: 'matroska,webm', codec: 'hevc' }, // Fail
 ];
 

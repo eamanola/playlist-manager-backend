@@ -3,6 +3,8 @@ const { exec } = require('node:child_process');
 const { utils } = require('automata-utils');
 const { createReadStream } = require('node:fs');
 
+const escapePath = require('../utils/escape-path');
+
 const { outputPath } = require('./output-path');
 const { copy } = require('./format');
 
@@ -22,10 +24,10 @@ const extractStream = (type) => async (req, res, next) => {
   const cmd = 'ffmpeg';
   const args = [
     '-y',
-    '-i', `"${path}"`,
+    '-i', `"${escapePath(path)}"`,
     '-map', `0:${streamIndex}`,
     ...codecOptions.split(' '),
-    `"${output}"`,
+    `"${escapePath(output)}"`,
   ];
   logger.info('-', [cmd, ...args].join(' '));
 
