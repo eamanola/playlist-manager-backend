@@ -9,13 +9,14 @@ const escapePath = require('../utils/escape-path.js');
 // -vframes 1 \
 // output.jpg
 
-const thumbnail = async (input, output) => {
+const thumbnail = async (input, output, { ss = '00:04:00.00' } = {}) => {
   const cmd = [
     'ffmpeg',
-    '-ss 00:04:00.00',
+    `-ss ${ss}`,
     `-i "${escapePath(input)}"`,
     '-vf "scale=240:-1:force_original_aspect_ratio=decrease"',
     '-vframes 1',
+    '-abort_on empty_output',
     `"${output}"`,
   ].join(' ');
 
