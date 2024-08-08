@@ -185,8 +185,33 @@ const transcode = (type) => {
   };
 };
 
+const mimeType = async (type, path) => {
+  const { format } = await probe(path);
+
+  let mime;
+  switch (type) {
+    case 'audio':
+      mime = audioMime(format);
+      break;
+
+    case 'subtitle':
+      mime = subtitleMime(format);
+      break;
+
+    case 'video':
+      mime = videoMime(format);
+      break;
+
+    default:
+      throw new Error(`Unknown type: ${type}`);
+  }
+
+  return mime;
+};
+
 module.exports = {
   copy,
   mimeToExt,
+  mimeType,
   transcode,
 };

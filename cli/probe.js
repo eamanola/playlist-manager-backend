@@ -8,12 +8,14 @@ const formatStreams = (streams) => {
 
   const audios = streams
     .filter(({ codec_type: ct }) => ct === 'audio')
-    .map(({ index, codec_name: codec, tags }) => ({ codec, index, language: tags?.language || 'und' }));
+    .map(({ index, codec_name: codec, tags }) => ({
+      codec, index, language: tags?.language || 'und',
+    }));
 
   const subtitles = streams
     .filter(({ codec_type: ct }) => ct === 'subtitle')
     .map(({ index, tags, codec_name: codec }) => ({
-      codec, index, language: tags.language, title: tags.title,
+      codec, index, language: tags?.language, title: tags?.title,
     }));
 
   const fonts = streams
