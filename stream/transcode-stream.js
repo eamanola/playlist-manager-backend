@@ -105,8 +105,24 @@ const transcodeStream = (type) => async (req, res, next) => {
 
       next(err);
     } else {
-      console.log(proc.pid, 'post-process');
-      cp(output, await cachePath(type, path, streamIndex));
+      const tmpFile = output;
+      const cacheFile = await cachePath(type, path, streamIndex);
+      console.info(proc.pid, 'post-process');
+      if (mime === 'video/mp4') {
+        const cmd1 = 'ffmpeg';
+        const args1 = [
+          '-y',
+          '-i', `"${tmpFile}"`,
+          '-c:v', 'copy',
+          '-f', 'mp4',
+          `"${cacheFile}"`,
+        ];
+        logger.info(proc.pid, 'moving moov:', [cmd1, ...args1].join(' '));
+        exec([cmd1, ...args1].join(' '), (moveErr) => console.log(moveErr));
+      } else {
+        console.info(proc.pid, 'copy to cache');
+        cp(tmpFile, cacheFile);
+      }
     }
   });
 
