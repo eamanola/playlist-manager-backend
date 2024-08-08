@@ -9,7 +9,7 @@ const { transcode } = require('./format');
 
 const { logger } = utils;
 
-const logProgress = (pid, stderr) => {
+const logProgress = ({ pid }) => (stderr) => {
   logger.info(pid, `${stderr}`);
 
   const match = `${stderr}`.match(/speed=\s*(?<speed>\d+?(?:\.\d+)?)x/u);
@@ -22,7 +22,8 @@ const logProgress = (pid, stderr) => {
   }
 };
 
-const sendOutput = (proc, output, res) => {
+const sendTail = (proc, output, res) => new Promise((resolve, reject) => {
+  console.log(proc.pid, 'send tail');
   let sent = 0;
 
   const writeToRes = () => {
@@ -46,24 +47,20 @@ const sendOutput = (proc, output, res) => {
     }
   };
 
-  const pipeRest = () => {
-    console.log(proc.pid, 'pipe rest');
-
-    createReadStream(output, { start: sent }).pipe(res);
-  };
-
   proc.on('close', (code, signal) => {
     console.log(proc.pid, 'close', code, signal);
 
     unwatchFile(output);
 
     if (code === 0 && signal === null) {
-      pipeRest();
+      resolve(sent);
+    } else {
+      reject(new Error(`code: ${code}, signal: ${signal}`));
     }
   });
 
   watchFile(output, writeToRes);
-};
+});
 
 const onConnectionClosed = (proc) => () => {
   logger.info(proc.pid, 'connection closed');
@@ -72,6 +69,26 @@ const onConnectionClosed = (proc) => () => {
     logger.info(proc.pid, 'killing');
 
     kill(proc.pid, 'SIGKILL');
+  }
+};
+
+const postProcess = (mime, tmpFile, cacheFile) => {
+  console.info('post-process');
+
+  if (mime === 'video/mp4') {
+    logger.info('moving moov:');
+
+    const cmd1 = 'ffmpeg';
+    const args1 = [
+      '-y', '-i', `"${tmpFile}"`, '-c:v', 'copy', '-f', 'mp4', `"${cacheFile}"`,
+    ];
+    logger.info('-', [cmd1, ...args1].join(' '));
+
+    exec([cmd1, ...args1].join(' '), (moveErr) => logger.info(moveErr));
+  } else {
+    logger.info('copy to cache');
+
+    cp(tmpFile, cacheFile);
   }
 };
 
@@ -95,44 +112,32 @@ const transcodeStream = (type) => async (req, res, next) => {
   ];
   logger.info('-', [cmd, ...args].join(' '));
 
-  res.setHeader('content-type', mime);
-
   const proc = exec([cmd, ...args].join(' '), async (err) => {
     if (err) {
-      logger.info(proc.pid, 'killing');
-
       rm(output);
 
       next(err);
     } else {
-      const tmpFile = output;
-      const cacheFile = await cachePath(type, path, streamIndex);
-      console.info(proc.pid, 'post-process');
-      if (mime === 'video/mp4') {
-        const cmd1 = 'ffmpeg';
-        const args1 = [
-          '-y',
-          '-i', `"${tmpFile}"`,
-          '-c:v', 'copy',
-          '-f', 'mp4',
-          `"${cacheFile}"`,
-        ];
-        logger.info(proc.pid, 'moving moov:', [cmd1, ...args1].join(' '));
-        exec([cmd1, ...args1].join(' '), (moveErr) => console.log(moveErr));
-      } else {
-        console.info(proc.pid, 'copy to cache');
-        cp(tmpFile, cacheFile);
-      }
+      postProcess(mime, output, await cachePath(type, path, streamIndex));
     }
   });
 
-  proc.stderr.on('data', (stderr) => {
-    logProgress(proc.pid, stderr);
+  req.on('close', onConnectionClosed(proc));
+
+  proc.stderr.on('data', logProgress(proc));
+
+  proc.stderr.once('readable', async () => {
+    res.setHeader('content-type', mime);
+
+    try {
+      const start = await sendTail(proc, output, res);
+
+      console.log(proc.pid, 'pipe rest');
+      createReadStream(output, { start }).pipe(res);
+    } catch (err) {
+      logger.info(proc.pid, err);
+    }
   });
-
-  req.on('close', onConnectionClosed(proc, output));
-
-  proc.stderr.once('readable', () => sendOutput(proc, output, res));
 };
 
 module.exports = transcodeStream;
