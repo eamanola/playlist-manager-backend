@@ -12,13 +12,18 @@ const outputDir = async (type, path) => {
   return tempDir;
 };
 
-const outputPath = async (type, path, streamIndex, transcode) => {
-  const output = [await outputDir(type, path), `${streamIndex}${transcode ? 'tr' : ''}`].join(sep);
+const cachePath = async (type, path, streamIndex) => {
+  const output = [await outputDir(type, path), `${streamIndex}`].join(sep);
 
   return output;
 };
 
+const tmpPath = async (type, path, streamIndex) => (
+  `${await cachePath(type, path, streamIndex)}.tmp`
+);
+
 module.exports = {
+  cachePath,
   outputDir,
-  outputPath,
+  tmpPath,
 };

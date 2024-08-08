@@ -3,7 +3,7 @@ const { createReadStream } = require('node:fs');
 const { utils } = require('automata-utils');
 
 const exists = require('../utils/exists');
-const { outputPath } = require('./output-path');
+const { cachePath } = require('./output-path');
 const { mimeType } = require('./format');
 
 const { logger } = utils;
@@ -11,11 +11,9 @@ const { logger } = utils;
 const sendCached = (type) => async (req, res, next) => {
   const { params } = req;
 
-  const { path, streamIndex, transcode } = params;
+  const { path, streamIndex } = params;
 
-  const TRANSCODE = !!transcode;
-
-  const output = await outputPath(type, path, streamIndex, TRANSCODE);
+  const output = await cachePath(type, path, streamIndex);
 
   if (await exists(output)) {
     logger.info('-- send cached');

@@ -5,8 +5,8 @@ const { createReadStream } = require('node:fs');
 
 const escapePath = require('../utils/escape-path');
 
-const { outputPath } = require('./output-path');
-const { copy, mimeToExt } = require('./format');
+const { cachePath } = require('./output-path');
+const { copy } = require('./format');
 
 const { logger } = utils;
 
@@ -15,12 +15,10 @@ const extractStream = (type) => async (req, res, next) => {
   const { params } = req;
 
   const { path, streamIndex } = params;
-  const TRANSCODE = false;
 
   const { codecOptions, mime } = await copy(type, path, Number(streamIndex));
-  const extension = mimeToExt(mime);
 
-  const output = await outputPath(type, path, streamIndex, TRANSCODE, extension);
+  const output = await cachePath(type, path, streamIndex);
 
   const cmd = 'ffmpeg';
   const args = [

@@ -1,11 +1,11 @@
 const { exec } = require('node:child_process');
-const { rm } = require('node:fs/promises');
+const { rm, cp } = require('node:fs/promises');
 const { createReadStream, watchFile, unwatchFile } = require('node:fs');
 const kill = require('tree-kill');
 const { utils } = require('automata-utils');
 
-const { outputPath } = require('./output-path');
-const { transcode, mimeToExt } = require('./format');
+const { cachePath, tmpPath } = require('./output-path');
+const { transcode } = require('./format');
 
 const { logger } = utils;
 
@@ -80,11 +80,10 @@ const transcodeStream = (type) => async (req, res, next) => {
 
   const { params } = req;
   const { path, streamIndex } = params;
-  const TRANSCODE = true;
-  const { codecOptions, mime } = transcode(type);
-  const extension = mimeToExt(mime);
 
-  const output = await outputPath(type, path, streamIndex, TRANSCODE, extension);
+  const { codecOptions, mime } = transcode(type);
+
+  const output = await tmpPath(type, path, streamIndex);
 
   const cmd = 'ffmpeg';
   const args = [
@@ -98,12 +97,16 @@ const transcodeStream = (type) => async (req, res, next) => {
 
   res.setHeader('content-type', mime);
 
-  const proc = exec([cmd, ...args].join(' '), (err) => {
+  const proc = exec([cmd, ...args].join(' '), async (err) => {
     if (err) {
       logger.info(proc.pid, 'killing');
-      rm(output); // dont cache
+
+      rm(output);
 
       next(err);
+    } else {
+      console.log(proc.pid, 'post-process');
+      cp(output, await cachePath(type, path, streamIndex));
     }
   });
 
@@ -111,7 +114,7 @@ const transcodeStream = (type) => async (req, res, next) => {
     logProgress(proc.pid, stderr);
   });
 
-  req.on('close', onConnectionClosed(proc));
+  req.on('close', onConnectionClosed(proc, output));
 
   proc.stderr.once('readable', () => sendOutput(proc, output, res));
 };
