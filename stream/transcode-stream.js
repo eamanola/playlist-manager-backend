@@ -5,7 +5,7 @@ const kill = require('tree-kill');
 const { utils } = require('automata-utils');
 
 const { outputPath } = require('./output-path');
-const { transcode } = require('./format');
+const { transcode, mimeToExt } = require('./format');
 
 const { logger } = utils;
 
@@ -81,7 +81,9 @@ const transcodeStream = (type) => async (req, res, next) => {
   const { params } = req;
   const { path, streamIndex } = params;
   const TRANSCODE = true;
-  const { codecOptions, extension, mime } = transcode(type);
+  const { codecOptions, mime } = transcode(type);
+  const extension = mimeToExt(mime);
+
   const output = await outputPath(type, path, streamIndex, TRANSCODE, extension);
 
   const cmd = 'ffmpeg';

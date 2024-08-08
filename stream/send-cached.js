@@ -4,7 +4,7 @@ const { utils } = require('automata-utils');
 
 const exists = require('../utils/exists');
 const { outputPath } = require('./output-path');
-const { copy, transcode: transcodeOptions } = require('./format');
+const { copy, transcode: transcodeOptions, mimeToExt } = require('./format');
 
 const { logger } = utils;
 
@@ -15,9 +15,10 @@ const sendCached = (type) => async (req, res, next) => {
 
   const TRANSCODE = !!transcode;
 
-  const { extension, mime } = TRANSCODE
+  const { mime } = TRANSCODE
     ? transcodeOptions(type)
     : (await copy(type, path, Number(streamIndex)));
+  const extension = mimeToExt(mime);
 
   const output = await outputPath(type, path, streamIndex, TRANSCODE, extension);
 

@@ -12,11 +12,8 @@ const outputDir = async (type, path) => {
   return tempDir;
 };
 
-const outputPath = async (type, path, streamIndex, transcode, extension) => {
-  const output = [
-    await outputDir(type, path),
-    `${streamIndex}${transcode ? 'tr' : ''}.${extension}`,
-  ].join(sep);
+const outputPath = async (type, path, streamIndex, transcode) => {
+  const output = [await outputDir(type, path), `${streamIndex}${transcode ? 'tr' : ''}`].join(sep);
 
   return output;
 };

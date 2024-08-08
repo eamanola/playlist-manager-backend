@@ -8,6 +8,9 @@ const { logger } = utils;
 // and WebVTT subtitles are supported for WebM.
 const isWebm = (format) => /webm/iu.test(format);
 const isMp4 = (format) => /mp4/iu.test(format);
+const isMp3 = (format) => /mp3/iu.test(format);
+const isWebVTT = (format) => /webvtt/iu.test(format);
+const isAss = (format) => /ass/iu.test(format);
 const isVorbis = (codec) => /vorbis/iu.test(codec);
 const isOpus = (codec) => /opus/iu.test(codec);
 const isVP8 = (codec) => /vp8/iu.test(codec);
@@ -25,28 +28,65 @@ const skipWarning = (format, codec) => SKIP_WARNING.find(
   ({ codec: c, format: f }) => c === codec && f === format,
 );
 
+const mimeToExt = (mime) => {
+  const { type, format } = mime.match(/^(?<type>[^/]+)\/(?<format>.+)/u).groups;
+
+  if (type === 'audio' && format === 'mp4') {
+    return 'm4a';
+  }
+
+  return format;
+};
+
+const audioMime = (format, codec = null) => {
+  if (codec) return `audio/${codec}`;
+
+  if (isMp4(format)) return 'audio/mp4';
+
+  if (isMp3(format)) return 'audio/mp3';
+
+  if (isWebm(format)) return 'audio/webm';
+
+  return null;
+};
+
+const videoMime = (format, codec = null) => {
+  if (codec) return `video/${codec}`;
+
+  if (isMp4(format)) return 'video/mp4';
+
+  if (isWebm(format)) return 'video/webm';
+
+  return null;
+};
+
+const subtitleMime = (format) => {
+  if (isAss(format)) return 'text/ass';
+
+  if (isWebVTT(format)) return 'text/vtt';
+
+  return null;
+};
+
 const audioCopyOptions = async (path, streamIndex) => {
   const { audios, format } = await probe(path);
 
   let codecOptions = '-c copy -f mp4';
-  let extension = 'm4a';
-  let mime = 'audio/mp4';
+  let mime = audioMime('mp4');
 
   if (isWebm(format)) {
     const { codec } = audios.find(({ index }) => index === streamIndex);
 
     if (isVorbis(codec) || isOpus(codec)) {
       codecOptions = '-c copy -f webm';
-      extension = 'webm';
-      mime = `audio/${codec}`; // audio/webm?
+      mime = audioMime('webm', codec);
     } else if (!skipWarning(format, codec)) {
       // probably fails to decode, redirect to /transcode ?
       logger.warn('Unsupported audio ?', format, codec);
     }
   } else if (isMp4(format)) {
     codecOptions = '-c copy -f mp4';
-    extension = 'm4a';
-    mime = 'audio/mp4';
+    mime = audioMime('mp4');
   } else {
     // probably fails to decode, redirect to /transcode ?
     logger.error('Unsupported audio ?', format);
@@ -54,7 +94,6 @@ const audioCopyOptions = async (path, streamIndex) => {
 
   return {
     codecOptions,
-    extension,
     mime,
   };
 };
@@ -63,24 +102,21 @@ const videoCopyOptions = async (path) => {
   const { format, video } = await probe(path);
 
   let codecOptions = '-c copy -f mp4';
-  let extension = 'mp4';
-  let mime = 'video/mp4';
+  let mime = videoMime('mp4');
 
   if (isWebm(format)) {
     const { codec } = video;
 
     if (isVP8(codec) || isVP9(codec) || isAV1(codec)) {
       codecOptions = '-c copy -f webm';
-      extension = 'webm';
-      mime = `video/${codec}`; // video/webm?
+      mime = videoMime('webm', codec); // video/webm?
     } else if (!skipWarning(format, codec)) {
       // probably fails to decode, redirect to /transcode ?
       logger.warn('Unsupported video ?', format, codec);
     }
   } else if (isMp4(format)) {
     codecOptions = '-c copy -f mp4';
-    extension = 'mp4';
-    mime = 'video/mp4';
+    mime = videoMime('mp4');
   } else {
     // probably fails to decode, redirect to /transcode ?
     logger.warn('Unsupported video ?', format);
@@ -88,7 +124,6 @@ const videoCopyOptions = async (path) => {
 
   return {
     codecOptions,
-    extension,
     mime,
   };
 };
@@ -100,10 +135,10 @@ const copy = async (type, path, streamIndex) => {
   }
 
   if (type === 'subtitle') {
+    const mime = subtitleMime('ass');
     return {
       codecOptions: '-c copy -f ass',
-      extension: 'ass',
-      mime: 'text/ass',
+      mime,
     };
   }
 
@@ -116,20 +151,17 @@ const copy = async (type, path, streamIndex) => {
 
 const transcode = (type) => {
   let codecOptions;
-  let extension;
   let mime;
 
   switch (type) {
     case 'audio':
       codecOptions = '-c:a libmp3lame -f mp3';
-      extension = 'mp3';
-      mime = 'audio/mp3';
+      mime = audioMime('mp3');
       break;
 
     case 'subtitle':
       codecOptions = '-f webwtt';
-      extension = 'vtt';
-      mime = 'text/vtt';
+      mime = subtitleMime('webwtt');
       break;
 
     case 'video':
@@ -140,8 +172,7 @@ const transcode = (type) => {
         '-preset slow',
         '-f mp4',
       ].join(' ');
-      extension = 'mp4';
-      mime = 'video/mp4';
+      mime = videoMime('mp4');
       break;
 
     default:
@@ -150,12 +181,12 @@ const transcode = (type) => {
 
   return {
     codecOptions,
-    extension,
     mime,
   };
 };
 
 module.exports = {
   copy,
+  mimeToExt,
   transcode,
 };
