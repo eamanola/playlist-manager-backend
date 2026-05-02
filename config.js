@@ -1,3 +1,5 @@
+require('dotenv').config({ quiet: true });
+
 const {
   CACHE_DIR = '/tmp/media-library',
   MEDIA_LIBS = '/home/eamanola/Videos',
