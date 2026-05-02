@@ -21,7 +21,7 @@ router.use('/audio', audio);
 router.post('/create-thumbnails', createThumbnails);
 router.use('/fonts', fonts);
 router.post('/probes', probes);
-router.put('/play/:id?', play);
+router.put('/play/{:id}', play);
 router.use('/played', played);
 router.use('/thumbnails', express.static(THUMB_DIR));
 router.use('/subtitle', subtitle);
