@@ -5,7 +5,7 @@ const filterExtensions = (extentions) => ({ name }) => extentions
 
 const filterFolders = (file) => file.isFile();
 
-const removeUnnecessary = ({ name, path }) => ({ name, path });
+const removeUnnecessary = ({ name, parentPath }) => ({ name, path: parentPath });
 
 const finder = async (path, { extentions = [] } = {}) => {
   const files = await readdir(path, { recursive: true, withFileTypes: true });
