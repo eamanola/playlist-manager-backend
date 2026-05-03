@@ -17,15 +17,15 @@ const { router: videos } = require('./videos');
 const { errorHandler } = middlewares;
 
 const router = express.Router();
-router.use('/audio', audio);
 router.post('/create-thumbnails', createThumbnails);
 router.use('/fonts', fonts);
 router.post('/probes', probes);
-router.put('/play/{:id}', play);
+router.put(['/play', '/play/:id'], play); // /play{/:id} || /play/:id?
 router.use('/played', played);
 router.use('/thumbnails', express.static(THUMB_DIR));
-router.use('/subtitle', subtitle);
-router.use('/video', video);
+// router.use('/audio', audio);
+// router.use('/subtitle', subtitle);
+// router.use('/video', video);
 router.get('/videos', videos);
 
 router.use(errorHandler(errors, { defaultTo500: false }));

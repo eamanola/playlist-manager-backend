@@ -8,10 +8,9 @@ const transcodeStream = require('./transcode-stream');
 const createRouter = (type) => {
   const router = express.Router();
 
-  router.use('/:path/:streamIndex/{:transcode}', checkAccess);
-  router.get('/:path/:streamIndex/transcode', transcodeStream(type));
-  router.get('/:path/:streamIndex', sendCached(type));
-  router.get('/:path/:streamIndex', extractStream(type));
+  router.get('/:path/:streamIndex/transcode', checkAccess, transcodeStream(type));
+  router.get('/:path/:streamIndex', checkAccess, sendCached(type));
+  router.get('/:path/:streamIndex', checkAccess, extractStream(type));
 
   return router;
 };
