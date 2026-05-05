@@ -1,11 +1,11 @@
 const { exec } = require('node:child_process');
 const { rm, cp } = require('node:fs/promises');
-const { createReadStream, watchFile, unwatchFile } = require('node:fs');
-const kill = require('tree-kill');
 const { utils } = require('automata-utils');
+const kill = require('tree-kill');
 
 const { cachePath, tmpPath } = require('./output-path');
 const { transcode } = require('./format');
+const streamOutput = require('./stream-output');
 
 const { logger } = utils;
 
@@ -21,46 +21,6 @@ const logProgress = ({ pid }) => (stderr) => {
     }
   }
 };
-
-const sendTail = (proc, output, res) => new Promise((resolve, reject) => {
-  logger.info(proc.pid, 'send tail');
-  let sent = 0;
-
-  const writeToRes = () => {
-    logger.info(proc.pid, 'write', res.writableLength);
-
-    const queueEmpty = res.writableLength === 0;
-    if (queueEmpty) {
-      const stream = createReadStream(output, { start: sent });
-
-      stream.on('readable', () => {
-        let chunk;
-        // eslint-disable-next-line no-cond-assign
-        while ((chunk = stream.read()) !== null) {
-          res.write(chunk);
-        }
-      });
-
-      stream.on('close', () => {
-        sent += stream.bytesRead;
-      });
-    }
-  };
-
-  proc.on('close', (code, signal) => {
-    logger.info(proc.pid, 'close', code, signal);
-
-    unwatchFile(output);
-
-    if (code === 0 && signal === null) {
-      resolve(sent);
-    } else {
-      reject(new Error(`code: ${code}, signal: ${signal}`));
-    }
-  });
-
-  watchFile(output, writeToRes);
-});
 
 const onConnectionClosed = (proc) => () => {
   logger.info(proc.pid, 'connection closed');
@@ -112,33 +72,33 @@ const transcodeStream = (type) => async (req, res, next) => {
   ];
   logger.info('-', [cmd, ...args].join(' '));
 
-  const proc = exec([cmd, ...args].join(' '), async (err) => {
-    if (err) {
-      rm(output);
+  const onSuccess = async () => {
+    postProcess(
+      mime,
+      output,
+      await cachePath(type, path, streamIndex),
+    );
+  };
 
-      next(err);
-      return;
-    }
+  const onFail = (err) => {
+    logger.info(proc.pid, 'removing output');
+    rm(output);
 
-    postProcess(mime, output, await cachePath(type, path, streamIndex));
-  });
+    next(err);
+  };
+
+  res.setHeader('content-type', mime);
+
+  const proc = streamOutput(
+    [cmd, ...args].join(' '),
+    output,
+    res,
+    { onFail, onSuccess },
+  );
 
   req.on('close', onConnectionClosed(proc));
 
   proc.stderr.on('data', logProgress(proc));
-
-  proc.stderr.once('readable', async () => {
-    res.setHeader('content-type', mime);
-
-    try {
-      const start = await sendTail(proc, output, res);
-
-      logger.info(proc.pid, 'pipe rest');
-      createReadStream(output, { start }).pipe(res);
-    } catch (err) {
-      logger.info(proc.pid, err);
-    }
-  });
 };
 
 module.exports = transcodeStream;
