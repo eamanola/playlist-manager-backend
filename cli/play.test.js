@@ -7,7 +7,7 @@ describe('play', () => {
     try {
       const help = exec(`${player} --help`);
       expect(!!help).toBe(true);
-    } catch (err) {
+    } catch {
       expect('should not throw').toBe(true);
     }
   });

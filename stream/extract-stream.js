@@ -34,11 +34,12 @@ const extractStream = (type) => async (req, res, next) => {
     if (err) {
       rm(output);
       next(err);
-    } else {
-      res.setHeader('content-type', mime);
-      res.status(200);
-      createReadStream(output).pipe(res);
+      return;
     }
+
+    res.setHeader('content-type', mime);
+    res.status(200);
+    createReadStream(output).pipe(res);
   });
 };
 

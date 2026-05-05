@@ -136,6 +136,7 @@ const copy = async (type, path, streamIndex) => {
 
   if (type === 'subtitle') {
     const mime = subtitleMime('ass');
+
     return {
       codecOptions: '-c copy -f ass',
       mime,

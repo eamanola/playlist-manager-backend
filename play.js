@@ -22,8 +22,10 @@ const router = (req, res, next) => {
   logger.info(`play ${path}`);
   try {
     res.status(200).json(startPlay(path));
+    return true;
   } catch (err) {
     next(err);
+    return false;
   }
 };
 

@@ -3,7 +3,7 @@ const escapePath = require('../utils/escape-path.js');
 
 const formatStreams = (streams) => {
   const [video] = streams
-    .filter(({ codec_type: ct, tags }) => (ct === 'video' && !(/image/u.test(tags.mimetype))))
+    .filter(({ codec_type: ct, tags }) => ct === 'video' && !/image/u.test(tags.mimetype))
     .map(({ index, codec_name: codec }) => ({ codec, index }));
 
   const audios = streams
@@ -19,7 +19,7 @@ const formatStreams = (streams) => {
     }));
 
   const fonts = streams
-    .filter(({ codec_type: ct, tags }) => (ct === 'attachment' && /font/u.test(tags.mimetype)))
+    .filter(({ codec_type: ct, tags }) => ct === 'attachment' && /font/u.test(tags.mimetype))
     .map(({ tags }) => ({ filename: tags.filename, mimetype: tags.mimetype }));
 
   return {

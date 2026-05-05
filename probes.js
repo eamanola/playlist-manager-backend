@@ -14,8 +14,10 @@ const probes = async (req, res, next) => {
 
   try {
     res.status(200).json(await getProbes(paths));
+    return true;
   } catch (err) {
     next(err);
+    return false;
   }
 };
 

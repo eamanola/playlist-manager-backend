@@ -18,9 +18,7 @@ const cachePath = async (type, path, streamIndex) => {
   return output;
 };
 
-const tmpPath = async (type, path, streamIndex) => (
-  `${await cachePath(type, path, streamIndex)}.tmp`
-);
+const tmpPath = async (type, path, streamIndex) => `${await cachePath(type, path, streamIndex)}.tmp`;
 
 module.exports = {
   cachePath,

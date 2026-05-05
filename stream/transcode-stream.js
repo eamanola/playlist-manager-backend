@@ -23,11 +23,11 @@ const logProgress = ({ pid }) => (stderr) => {
 };
 
 const sendTail = (proc, output, res) => new Promise((resolve, reject) => {
-  console.log(proc.pid, 'send tail');
+  logger.info(proc.pid, 'send tail');
   let sent = 0;
 
   const writeToRes = () => {
-    console.log(proc.pid, 'write', res.writableLength);
+    logger.info(proc.pid, 'write', res.writableLength);
 
     const queueEmpty = res.writableLength === 0;
     if (queueEmpty) {
@@ -48,7 +48,7 @@ const sendTail = (proc, output, res) => new Promise((resolve, reject) => {
   };
 
   proc.on('close', (code, signal) => {
-    console.log(proc.pid, 'close', code, signal);
+    logger.info(proc.pid, 'close', code, signal);
 
     unwatchFile(output);
 
@@ -73,7 +73,7 @@ const onConnectionClosed = (proc) => () => {
 };
 
 const postProcess = (mime, tmpFile, cacheFile) => {
-  console.info('post-process');
+  logger.info('post-process');
 
   if (mime === 'video/mp4') {
     logger.info('moving moov:');
@@ -117,9 +117,10 @@ const transcodeStream = (type) => async (req, res, next) => {
       rm(output);
 
       next(err);
-    } else {
-      postProcess(mime, output, await cachePath(type, path, streamIndex));
+      return;
     }
+
+    postProcess(mime, output, await cachePath(type, path, streamIndex));
   });
 
   req.on('close', onConnectionClosed(proc));
@@ -132,7 +133,7 @@ const transcodeStream = (type) => async (req, res, next) => {
     try {
       const start = await sendTail(proc, output, res);
 
-      console.log(proc.pid, 'pipe rest');
+      logger.info(proc.pid, 'pipe rest');
       createReadStream(output, { start }).pipe(res);
     } catch (err) {
       logger.info(proc.pid, err);

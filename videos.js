@@ -26,8 +26,10 @@ const getVideos = async () => {
 const videos = async (req, res, next) => {
   try {
     res.status(200).json(await getVideos());
+    return true;
   } catch (err) {
     next(err);
+    return false;
   }
 };
 

@@ -15,15 +15,16 @@ const sendCached = (type) => async (req, res, next) => {
 
   const output = await cachePath(type, path, streamIndex);
 
-  if (await exists(output)) {
-    logger.info('-- send cached');
-
-    res.setHeader('content-type', await mimeType(type, output));
-    res.status(200);
-    createReadStream(output).pipe(res);
-  } else {
+  if (!await exists(output)) {
     next();
+    return;
   }
+
+  logger.info('-- send cached');
+
+  res.setHeader('content-type', await mimeType(type, output));
+  res.status(200);
+  createReadStream(output).pipe(res);
 };
 
 module.exports = sendCached;

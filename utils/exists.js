@@ -4,7 +4,7 @@ const exists = async (path) => {
   try {
     await access(path, constants.F_OK);
     return true;
-  } catch (err) {
+  } catch {
     return false;
   }
 };

@@ -6,7 +6,7 @@ describe('probe', () => {
     try {
       const help = exec('ffprobe --help');
       expect(!!help).toBe(true);
-    } catch (err) {
+    } catch {
       expect('should not throw').toBe(true);
     }
   });

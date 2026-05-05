@@ -4,6 +4,8 @@ const { middlewares } = require('automata-utils');
 const { THUMB_DIR } = require('./config');
 const errors = require('./errors');
 
+const ENABLE_STREAM = false;
+
 const { router: audio } = require('./stream/audio');
 const { router: createThumbnails } = require('./create-thumbnails');
 const { router: fonts } = require('./stream/fonts');
@@ -23,9 +25,11 @@ router.post('/probes', probes);
 router.put(['/play', '/play/:id'], play); // /play{/:id} || /play/:id?
 router.use('/played', played);
 router.use('/thumbnails', express.static(THUMB_DIR));
-// router.use('/audio', audio);
-// router.use('/subtitle', subtitle);
-// router.use('/video', video);
+if (ENABLE_STREAM) {
+  router.use('/audio', audio);
+  router.use('/subtitle', subtitle);
+  router.use('/video', video);
+}
 router.get('/videos', videos);
 
 router.use(errorHandler(errors, { defaultTo500: false }));

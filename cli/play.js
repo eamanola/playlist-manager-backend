@@ -6,6 +6,7 @@ const play = async (filePath) => {
   const cmd = `${PLAYER} "${escapePath(filePath)}"`;
 
   const { stdout } = await exec(cmd);
+
   return stdout;
 };
 

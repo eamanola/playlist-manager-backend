@@ -12,7 +12,8 @@ const finder = async (path, { extentions = [] } = {}) => {
 
   const filtered = (
     extentions.length === 0
-      ? [...files] : files.filter(filterExtensions(extentions))
+      ? [...files]
+      : files.filter(filterExtensions(extentions))
   )
     .filter(filterFolders);
 

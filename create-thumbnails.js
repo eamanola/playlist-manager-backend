@@ -17,7 +17,7 @@ const cachePath = (cacheId) => join(THUMB_DIR, `${cacheId}.jpg`);
 const createThumbnail = async (cacheId, path) => {
   const output = cachePath(cacheId);
 
-  if (!(await exists(output))) {
+  if (!await exists(output)) {
     // logger.info('create thumb', path);
     const input = path;
     try {
@@ -66,8 +66,10 @@ const createThumbnails = async (req, res, next) => {
 
   try {
     res.status(200).json(await generateThumbnails(body));
+    return true;
   } catch (err) {
     next(err);
+    return false;
   }
 };
 

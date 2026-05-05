@@ -6,7 +6,7 @@ describe('thumbnail', () => {
     try {
       const help = exec('ffmpeg --help');
       expect(!!help).toBe(true);
-    } catch (err) {
+    } catch {
       expect('should not throw').toBe(true);
     }
   });
