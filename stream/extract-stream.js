@@ -1,10 +1,10 @@
 const { rm } = require('node:fs/promises');
 const { exec } = require('node:child_process');
-const { utils } = require('automata-utils');
 const { createReadStream } = require('node:fs');
 
-const escapePath = require('../utils/escape-path');
+const { utils } = require('automata-utils');
 
+const escapePath = require('../utils/escape-path');
 const { cachePath } = require('./output-path');
 const { copy } = require('./format');
 

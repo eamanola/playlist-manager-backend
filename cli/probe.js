@@ -1,5 +1,5 @@
-const exec = require('./exec-promisified.js');
-const escapePath = require('../utils/escape-path.js');
+const exec = require('./exec-promisified');
+const escapePath = require('../utils/escape-path');
 
 const formatStreams = (streams) => {
   const [video] = streams

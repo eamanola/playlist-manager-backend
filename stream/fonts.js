@@ -1,12 +1,11 @@
-const express = require('express');
 const { sep } = require('node:path');
+
+const express = require('express');
 
 const exec = require('../cli/exec-promisified');
 const exists = require('../utils/exists');
 const escapePath = require('../utils/escape-path');
-
 const { outputDir } = require('./output-path');
-
 const checkAccess = require('./check-access');
 
 const dumpIfMissing = async (req, res, next) => {

@@ -1,6 +1,7 @@
+const { rm } = require('node:fs/promises');
+
 const supertest = require('supertest');
 const yup = require('yup');
-const { rm } = require('node:fs/promises');
 
 const app = require('../app');
 const { cachePath } = require('./create-thumbnails');

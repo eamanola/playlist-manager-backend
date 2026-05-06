@@ -1,7 +1,6 @@
 const { errors, utils } = require('automata-utils');
 
 const canAccess = require('./utils/can-access');
-
 const play = require('./cli/play');
 
 const { logger } = utils;

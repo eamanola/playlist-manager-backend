@@ -3,9 +3,6 @@ const { middlewares } = require('automata-utils');
 
 const { THUMB_DIR } = require('./config');
 const errors = require('./errors');
-
-const ENABLE_STREAM = true;
-
 const { router: audio } = require('./stream/audio');
 const { router: createThumbnails } = require('./create-thumbnails');
 const { router: fonts } = require('./stream/fonts');
@@ -26,6 +23,8 @@ router.post('/probes', probes);
 router.put(['/play', '/play/:id'], play);
 router.use('/played', played);
 router.use('/thumbnails', express.static(THUMB_DIR));
+
+const ENABLE_STREAM = true;
 if (ENABLE_STREAM) {
   router.use('/audio', audio);
   router.use('/subtitle', subtitle);

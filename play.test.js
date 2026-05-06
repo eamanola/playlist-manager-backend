@@ -5,7 +5,6 @@ const { errors } = require('automata-utils');
 const canAccess = require('./utils/can-access');
 const play = require('./cli/play');
 const { MEDIA_LIBS } = require('./config');
-
 const { router } = require('./play');
 
 const app = express();

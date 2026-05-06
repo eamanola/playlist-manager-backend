@@ -1,4 +1,5 @@
 const { join } = require('node:path');
+
 const { MEDIA_LIBS } = require('./config');
 const findFiles = require('./cli/finder');
 const { createNotFound } = require('./errors');
