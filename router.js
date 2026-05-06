@@ -4,7 +4,7 @@ const { middlewares } = require('automata-utils');
 const { THUMB_DIR } = require('./config');
 const errors = require('./errors');
 
-const ENABLE_STREAM = false;
+const ENABLE_STREAM = true;
 
 const { router: audio } = require('./stream/audio');
 const { router: createThumbnails } = require('./create-thumbnails');

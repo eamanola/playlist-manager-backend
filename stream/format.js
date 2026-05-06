@@ -16,6 +16,7 @@ const isOpus = (codec) => /opus/iu.test(codec);
 const isVP8 = (codec) => /vp8/iu.test(codec);
 const isVP9 = (codec) => /vp9/iu.test(codec);
 const isAV1 = (codec) => /av1/iu.test(codec);
+const isHevc = (codec) => /hevc/iu.test(codec);
 
 const SKIP_WARNING = [
   { codec: 'aac', format: 'matroska,webm' }, // container swap ok
@@ -110,6 +111,11 @@ const videoCopyOptions = async (path) => {
     if (isVP8(codec) || isVP9(codec) || isAV1(codec)) {
       codecOptions = '-c copy -f webm';
       mime = videoMime('webm', codec); // video/webm?
+    } else if (isHevc(codec)) {
+      // (In some cases? limited support according to mdc)
+      // Firefox is capable to decode,
+      // but takes much longer than full transcode
+      throw new Error('transcode code', codec);
     } else if (!skipWarning(format, codec)) {
       // probably fails to decode, redirect to /transcode ?
       logger.warn('Unsupported video ?', format, codec);
