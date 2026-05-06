@@ -9,7 +9,7 @@ const sendAvilable = (proc, output, res) => new Promise((resolve, reject) => {
   let sent = 0;
 
   const writeToRes = () => {
-    logger.info(proc.pid, 'write', res.writableLength);
+    // logger.info(proc.pid, 'write', res.writableLength);
 
     const queueEmpty = res.writableLength === 0;
     if (queueEmpty) {

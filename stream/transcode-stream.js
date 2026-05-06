@@ -10,7 +10,8 @@ const streamOutput = require('./stream-output');
 const { logger } = utils;
 
 const logProgress = ({ pid }) => (stderr) => {
-  logger.info(pid, `${stderr}`);
+  // logger.info(pid, `${stderr}`);
+  process.stdout.write(`${pid}: ${stderr}`);
 
   const match = `${stderr}`.match(/speed=\s*(?<speed>\d+?(?:\.\d+)?)x/u);
   if (match) {
