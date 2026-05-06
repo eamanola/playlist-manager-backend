@@ -19,10 +19,13 @@ const isAV1 = (codec) => /av1/iu.test(codec);
 const isHevc = (codec) => /hevc/iu.test(codec);
 
 const SKIP_WARNING = [
-  { codec: 'aac', format: 'matroska,webm' }, // container swap ok
-  { codec: 'flac', format: 'matroska,webm' }, // container swap ok
-  { codec: 'h264', format: 'matroska,webm' }, // container swap ok
-  // { format: 'matroska,webm', codec: 'hevc' }, // Fail
+  // container swap ok
+  { codec: 'aac', format: 'matroska,webm' },
+  // container swap ok
+  { codec: 'flac', format: 'matroska,webm' },
+  // container swap ok
+  { codec: 'h264', format: 'matroska,webm' },
+  // { codec: 'hevc', format: 'matroska,webm' },
 ];
 
 const skipWarning = (format, codec) => SKIP_WARNING.find(
@@ -110,7 +113,8 @@ const videoCopyOptions = async (path) => {
 
     if (isVP8(codec) || isVP9(codec) || isAV1(codec)) {
       codecOptions = '-c copy -f webm';
-      mime = videoMime('webm', codec); // video/webm?
+      // video/webm?
+      mime = videoMime('webm', codec);
     } else if (isHevc(codec)) {
       // (In some cases? limited support according to mdc)
       // Firefox is capable to decode,

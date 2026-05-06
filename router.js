@@ -22,7 +22,8 @@ const router = express.Router();
 router.post('/create-thumbnails', createThumbnails);
 router.use('/fonts', fonts);
 router.post('/probes', probes);
-router.put(['/play', '/play/:id'], play); // /play{/:id} || /play/:id?
+// /play{/:id} || /play/:id?
+router.put(['/play', '/play/:id'], play);
 router.use('/played', played);
 router.use('/thumbnails', express.static(THUMB_DIR));
 if (ENABLE_STREAM) {

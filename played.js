@@ -2,10 +2,7 @@ const { router: restRouter } = require('automata-rest');
 
 const tableName = 'played';
 
-const columns = [
-  { name: 'isPlayed', required: true, type: 'bool' },
-  { name: 'mediaId', required: true, type: 'string' },
-];
+const columns = [{ name: 'isPlayed', required: true, type: 'bool' }, { name: 'mediaId', required: true, type: 'string' }];
 
 const indexes = [];
 

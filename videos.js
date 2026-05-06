@@ -1,14 +1,19 @@
 const { join } = require('node:path');
-
 const { MEDIA_LIBS } = require('./config');
 const findFiles = require('./cli/finder');
 const { createNotFound } = require('./errors');
 
 const getVideos = async () => {
   try {
-    const allFiles = await Promise.all(MEDIA_LIBS.map(
-      (mediaLib) => findFiles(mediaLib, { extentions: ['mp4', 'mkv', 'webm'] }),
-    ));
+    const allFiles = await Promise.all(
+      MEDIA_LIBS.map((mediaLib) => findFiles(mediaLib, {
+        extentions: [
+          'mp4',
+          'mkv',
+          'webm',
+        ],
+      })),
+    );
 
     return allFiles.map((mediaLibFiles, index) => ({
       mediaLib: MEDIA_LIBS[index],

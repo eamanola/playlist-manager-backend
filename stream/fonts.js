@@ -20,8 +20,9 @@ const dumpIfMissing = async (req, res, next) => {
     const cmd = `ffmpeg -dump_attachment:t "" -i "${escapePath(decodeURIComponent(path))}"`;
 
     try {
+      // this successfully fails
       await exec(cmd, { cwd: dstDir });
-    } catch (err) { // this successfully fails
+    } catch (err) {
       if (await exists(font) !== true) {
         throw err;
       }

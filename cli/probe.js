@@ -3,7 +3,7 @@ const escapePath = require('../utils/escape-path.js');
 
 const formatStreams = (streams) => {
   const [video] = streams
-    .filter(({ codec_type: ct, tags }) => ct === 'video' && !/image/u.test(tags.mimetype))
+    .filter(({ codec_type: ct, tags }) => ct === 'video' && !/image/u.test(tags?.mimetype))
     .map(({ index, codec_name: codec }) => ({ codec, index }));
 
   const audios = streams
@@ -19,8 +19,8 @@ const formatStreams = (streams) => {
     }));
 
   const fonts = streams
-    .filter(({ codec_type: ct, tags }) => ct === 'attachment' && /font/u.test(tags.mimetype))
-    .map(({ tags }) => ({ filename: tags.filename, mimetype: tags.mimetype }));
+    .filter(({ codec_type: ct, tags }) => ct === 'attachment' && /font/u.test(tags?.mimetype))
+    .map(({ tags }) => ({ filename: tags?.filename, mimetype: tags?.mimetype }));
 
   return {
     audios, fonts, subtitles, video,
@@ -30,7 +30,7 @@ const formatStreams = (streams) => {
 const formatChapters = (chapters) => chapters.map((chapter) => ({
   end: Number(chapter.end_time),
   start: Number(chapter.start_time),
-  title: chapter.tags.title,
+  title: chapter.tags?.title,
 }));
 
 const formatContainer = (container) => ({

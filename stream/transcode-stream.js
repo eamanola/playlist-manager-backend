@@ -41,7 +41,14 @@ const postProcess = (mime, tmpFile, cacheFile) => {
 
     const cmd1 = 'ffmpeg';
     const args1 = [
-      '-y', '-i', `"${tmpFile}"`, '-c:v', 'copy', '-f', 'mp4', `"${cacheFile}"`,
+      '-y',
+      '-i',
+      `"${tmpFile}"`,
+      '-c:v',
+      'copy',
+      '-f',
+      'mp4',
+      `"${cacheFile}"`,
     ];
     logger.info('-', [cmd1, ...args1].join(' '));
 
@@ -65,9 +72,14 @@ const transcodeStream = (type) => async (req, res, next) => {
 
   const cmd = 'ffmpeg';
   const args = [
-    '-y', '-v', 'error', '-stats',
-    '-i', `"${path}"`,
-    '-map', `0:${streamIndex}`,
+    '-y',
+    '-v',
+    'error',
+    '-stats',
+    '-i',
+    `"${path}"`,
+    '-map',
+    `0:${streamIndex}`,
     ...codecOptions.split(' '),
     `"${output}"`,
   ];
@@ -82,7 +94,7 @@ const transcodeStream = (type) => async (req, res, next) => {
   };
 
   const onFail = (err) => {
-    logger.info(proc.pid, 'removing output');
+    logger.info(/* proc.pid, */ 'removing output');
     rm(output);
 
     next(err);

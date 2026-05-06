@@ -23,8 +23,10 @@ const extractStream = (type) => async (req, res, next) => {
   const cmd = 'ffmpeg';
   const args = [
     '-y',
-    '-i', `"${escapePath(path)}"`,
-    '-map', `0:${streamIndex}`,
+    '-i',
+    `"${escapePath(path)}"`,
+    '-map',
+    `0:${streamIndex}`,
     ...codecOptions.split(' '),
     `"${escapePath(output)}"`,
   ];

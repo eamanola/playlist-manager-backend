@@ -11,9 +11,7 @@ const finder = async (path, { extentions = [] } = {}) => {
   const files = await readdir(path, { recursive: true, withFileTypes: true });
 
   const filtered = (
-    extentions.length === 0
-      ? [...files]
-      : files.filter(filterExtensions(extentions))
+    extentions.length === 0 ? [...files] : files.filter(filterExtensions(extentions))
   )
     .filter(filterFolders);
 
