@@ -3,10 +3,10 @@ const { rm } = require('node:fs/promises');
 const supertest = require('supertest');
 const yup = require('yup');
 
-const app = require('../app');
+const appWrapper = require('../app');
 const { cachePath } = require('./create-thumbnails');
 
-const api = supertest(app);
+let api;
 
 // This is quick test
 // Test files not provided
@@ -14,6 +14,10 @@ const api = supertest(app);
 // make sure config is setup
 
 describe('test paths', () => {
+  beforeAll(() => {
+    api = supertest(appWrapper({ db: global.client }));
+  });
+
   describe('GET /videos', () => {
     it('should fetch a list', async () => {
       const { body, status } = await api.get('/videos');

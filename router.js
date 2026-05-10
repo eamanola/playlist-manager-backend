@@ -15,23 +15,27 @@ const { router: videos } = require('./videos');
 
 const { errorHandler } = middlewares;
 
-const router = express.Router();
-router.post('/create-thumbnails', createThumbnails);
-router.use('/fonts', fonts);
-router.post('/probes', probes);
-// /play{/:id} || /play/:id?
-router.put(['/play', '/play/:id'], play);
-router.use('/played', played);
-router.use('/thumbnails', express.static(THUMB_DIR));
+const router = ({ db }) => {
+  const expressRouter = express.Router();
+  expressRouter.post('/create-thumbnails', createThumbnails);
+  expressRouter.use('/fonts', fonts);
+  expressRouter.post('/probes', probes);
+  // /play{/:id} || /play/:id?
+  expressRouter.put(['/play', '/play/:id'], play);
+  expressRouter.use('/played', played({ db }));
+  expressRouter.use('/thumbnails', express.static(THUMB_DIR));
 
-const ENABLE_STREAM = true;
-if (ENABLE_STREAM) {
-  router.use('/audio', audio);
-  router.use('/subtitle', subtitle);
-  router.use('/video', video);
-}
-router.get('/videos', videos);
+  const ENABLE_STREAM = true;
+  if (ENABLE_STREAM) {
+    expressRouter.use('/audio', audio);
+    expressRouter.use('/subtitle', subtitle);
+    expressRouter.use('/video', video);
+  }
+  expressRouter.get('/videos', videos);
 
-router.use(errorHandler(errors, { defaultTo500: false }));
+  expressRouter.use(errorHandler(errors, { defaultTo500: false }));
+
+  return expressRouter;
+};
 
 module.exports = router;

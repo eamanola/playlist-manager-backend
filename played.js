@@ -8,7 +8,8 @@ const indexes = [];
 
 const table = { columns, indexes, name: tableName };
 
-const router = restRouter(null, {
+const router = ({ db }) => restRouter(null, {
+  db,
   resultKey: 'played',
   resultsKey: 'playedList',
   table,
