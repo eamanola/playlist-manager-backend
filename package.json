@@ -1,12 +1,12 @@
 {
   "name": "playlist-manager-backend",
-  "version": "0.1.139",
+  "version": "0.1.140",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo test",
     "prepare": "husky || true",
-    "lint": "echo lint"
+    "lint": "eslint"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +19,16 @@
     "eslint-plugin-import-x": "^4.16.2",
     "eslint-stylistic-airbnb": "^3.1.1",
     "globals": "^17.6.0",
-    "husky": "^9.1.7"
+    "husky": "^9.1.7",
+    "supertest": "^7.2.2",
+    "touch": "^3.1.1"
+  },
+  "dependencies": {
+    "automata-rest": "github:eamanola/automata-rest",
+    "automata-utils": "github:eamanola/automata-utils",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "tree-kill": "^1.2.2",
+    "yup": "^1.7.1"
   }
 }

@@ -1,2 +1,8 @@
 allowBuilds:
   unrs-resolver: true
+  automata-rest: true
+  automata-utils: true
+  automata-cache: true
+  better-sqlite3: true
+
+blockExoticSubdeps: false
