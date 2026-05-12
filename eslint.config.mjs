@@ -80,20 +80,6 @@ export default [
   // requires import-x
   airbnb.configs['flat/addon-import'],
 
-  // eslint-stylistic-airbnb deprecated overrides
-  {
-    rules: {
-      '@stylistic/line-comment-position': [
-        'error',
-        {
-          applyDefaultIgnorePatterns: false,
-          ignorePattern: '',
-          position: 'above',
-        },
-      ],
-    },
-  },
-
   // general
   {
     rules: {
