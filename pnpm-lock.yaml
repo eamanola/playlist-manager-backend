@@ -209,10 +209,10 @@ importers:
     dependencies:
       automata-rest:
         specifier: github:eamanola/automata-rest
-        version: git+https://git@github.com:eamanola/automata-rest.git#a393cd593bae89af3c759a1921a33b92b9fd40b3
+        version: git+https://git@github.com:eamanola/automata-rest.git#0ced5cba5e72cfc8337ce69e7d2e07da6cff7325
       automata-utils:
         specifier: github:eamanola/automata-utils
-        version: git+https://git@github.com:eamanola/automata-utils.git#5632caceabde51451bae400352435b884b64121f
+        version: git+https://git@github.com:eamanola/automata-utils.git#cf134bc419e94867b7afa836c4878c730a3252e4
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -231,7 +231,7 @@ importers:
         version: 10.0.1(eslint@10.3.0)
       automata-db:
         specifier: github:eamanola/automata-db
-        version: git+https://git@github.com:eamanola/automata-db.git#acf4b47cc19b7dbde9ee615b00c9f58095be2b8d
+        version: git+https://git@github.com:eamanola/automata-db.git#910ff1967fd0f27444bd19256045ab6ac9687abe
       bump-pkg-json:
         specifier: ^0.1.3
         version: 0.1.3
@@ -899,17 +899,17 @@ packages:
     resolution: {gitHosted: true, tarball: https://codeload.github.com/eamanola/automata-cache/tar.gz/92f3e8934ff1196ba265f2012f1e48bdf8855ba6}
     version: 0.0.12
 
-  automata-db@git+https://git@github.com:eamanola/automata-db.git#acf4b47cc19b7dbde9ee615b00c9f58095be2b8d:
-    resolution: {commit: acf4b47cc19b7dbde9ee615b00c9f58095be2b8d, repo: git@github.com:eamanola/automata-db.git, type: git}
-    version: 0.1.3
+  automata-db@git+https://git@github.com:eamanola/automata-db.git#910ff1967fd0f27444bd19256045ab6ac9687abe:
+    resolution: {commit: 910ff1967fd0f27444bd19256045ab6ac9687abe, repo: git@github.com:eamanola/automata-db.git, type: git}
+    version: 0.1.5
 
-  automata-rest@git+https://git@github.com:eamanola/automata-rest.git#a393cd593bae89af3c759a1921a33b92b9fd40b3:
-    resolution: {commit: a393cd593bae89af3c759a1921a33b92b9fd40b3, repo: git@github.com:eamanola/automata-rest.git, type: git}
-    version: 0.1.3
+  automata-rest@git+https://git@github.com:eamanola/automata-rest.git#0ced5cba5e72cfc8337ce69e7d2e07da6cff7325:
+    resolution: {commit: 0ced5cba5e72cfc8337ce69e7d2e07da6cff7325, repo: git@github.com:eamanola/automata-rest.git, type: git}
+    version: 0.1.4
 
-  automata-utils@git+https://git@github.com:eamanola/automata-utils.git#5632caceabde51451bae400352435b884b64121f:
-    resolution: {commit: 5632caceabde51451bae400352435b884b64121f, repo: git@github.com:eamanola/automata-utils.git, type: git}
-    version: 0.0.18
+  automata-utils@git+https://git@github.com:eamanola/automata-utils.git#cf134bc419e94867b7afa836c4878c730a3252e4:
+    resolution: {commit: cf134bc419e94867b7afa836c4878c730a3252e4, repo: git@github.com:eamanola/automata-utils.git, type: git}
+    version: 0.0.19
 
   babel-jest@30.4.1:
     resolution: {integrity: sha512-fATAbM8piYxkiXQp3RBXmZHxZVNJZAVXXfyeyCN2Tida3+qJ8ea9UxhiJ2y4fLO90ZImKt6k9FlcH2+rLkJGhw==}
@@ -3141,7 +3141,7 @@ snapshots:
       - '@node-rs/xxhash'
       - '@opentelemetry/api'
 
-  automata-db@git+https://git@github.com:eamanola/automata-db.git#acf4b47cc19b7dbde9ee615b00c9f58095be2b8d:
+  automata-db@git+https://git@github.com:eamanola/automata-db.git#910ff1967fd0f27444bd19256045ab6ac9687abe:
     dependencies:
       better-sqlite3: 12.9.0
       dotenv: 17.4.2
@@ -3156,11 +3156,11 @@ snapshots:
       - snappy
       - socks
 
-  automata-rest@git+https://git@github.com:eamanola/automata-rest.git#a393cd593bae89af3c759a1921a33b92b9fd40b3:
+  automata-rest@git+https://git@github.com:eamanola/automata-rest.git#0ced5cba5e72cfc8337ce69e7d2e07da6cff7325:
     dependencies:
       automata-cache: https://codeload.github.com/eamanola/automata-cache/tar.gz/92f3e8934ff1196ba265f2012f1e48bdf8855ba6
-      automata-db: git+https://git@github.com:eamanola/automata-db.git#acf4b47cc19b7dbde9ee615b00c9f58095be2b8d
-      automata-utils: git+https://git@github.com:eamanola/automata-utils.git#5632caceabde51451bae400352435b884b64121f
+      automata-db: git+https://git@github.com:eamanola/automata-db.git#910ff1967fd0f27444bd19256045ab6ac9687abe
+      automata-utils: git+https://git@github.com:eamanola/automata-utils.git#cf134bc419e94867b7afa836c4878c730a3252e4
       dotenv: 17.4.2
       express: 5.2.1
       yup: 1.7.1
@@ -3176,7 +3176,7 @@ snapshots:
       - socks
       - supports-color
 
-  automata-utils@git+https://git@github.com:eamanola/automata-utils.git#5632caceabde51451bae400352435b884b64121f:
+  automata-utils@git+https://git@github.com:eamanola/automata-utils.git#cf134bc419e94867b7afa836c4878c730a3252e4:
     dependencies:
       dotenv: 17.4.2
       jsonwebtoken: 9.0.3
