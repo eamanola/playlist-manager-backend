@@ -1,20 +1,19 @@
 {
   "name": "playlist-manager-backend",
-  "version": "1.0.0",
+  "version": "0.1.138",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo test",
+    "prepare": "husky || true",
+    "lint": "echo lint"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^11.0.8",
-      "onFail": "download"
-    }
-  },
-  "type": "module"
+  "type": "commonjs",
+  "devDependencies": {
+    "bump-pkg-json": "^0.1.3",
+    "husky": "^9.1.7"
+  }
 }
