@@ -147,6 +147,7 @@ export default [
             'eslint.config.mjs',
             'webpack.config.cjs',
             '**/*.test.js',
+            'jest/**',
             'vite.config.js',
             'bin/download-memory-server-binaries.js',
           ],

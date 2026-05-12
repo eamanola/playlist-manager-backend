@@ -1,5 +1,6 @@
 allowBuilds:
   unrs-resolver: true
+  automata-db: true
   automata-rest: true
   automata-utils: true
   automata-cache: true
