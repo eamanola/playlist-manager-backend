@@ -1,6 +1,6 @@
 {
   "name": "playlist-manager-backend",
-  "version": "0.1.144",
+  "version": "0.1.145",
   "description": "",
   "main": "src/index.js",
   "scripts": {
@@ -28,6 +28,7 @@
   "dependencies": {
     "automata-rest": "github:eamanola/automata-rest",
     "automata-utils": "github:eamanola/automata-utils",
+    "better-sqlite3": "^12.10.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "tree-kill": "^1.2.2",
