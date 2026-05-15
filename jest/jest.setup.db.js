@@ -1,6 +1,6 @@
-const { connectDB, closeDB } = require('automata-db');
+const { drivers } = require('automata-db');
 
-const { DB_URL } = require('../src/config');
+global.db = drivers({ DB_ENGINE: 'sqlite' });
 
 const SKIP_PATHS = [];
 const { testPath } = expect.getState();
@@ -11,7 +11,7 @@ beforeAll(async () => {
     return;
   }
 
-  global.client = await connectDB(DB_URL);
+  await global.db.connectDB(':memory:');
 });
 
 afterAll(async () => {
@@ -19,5 +19,5 @@ afterAll(async () => {
     return;
   }
 
-  await closeDB(global.client);
+  await global.db.closeDB();
 });

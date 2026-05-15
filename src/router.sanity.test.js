@@ -18,7 +18,7 @@ describe('test paths', () => {
   beforeAll(() => {
     const app = express();
     app.use(express.json());
-    app.use(router({ db: global.client }));
+    app.use(router({ db: global.db }));
     api = supertest(app);
   });
 
