@@ -171,8 +171,8 @@ const transcode = (type) => {
       break;
 
     case 'subtitle':
-      codecOptions = '-f webwtt';
-      mime = subtitleMime('webwtt');
+      codecOptions = '-f webvtt';
+      mime = subtitleMime('webvtt');
       break;
 
     case 'video':
