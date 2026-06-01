@@ -10,35 +10,44 @@ const { transcode } = require('./format');
 
 const { logger } = utils;
 
-const getStat = (stats, stat) => {
-  // avg_br
-  // br
-  // frame
-  // out
-  // PSNR
-  // q
-  // f_size
-  // s_size
-  // st
-  // time
-  // type
-
-  const match = `${stats}`.match(new RegExp(`${stat}=\\s*(?<value>[^\\s]+)`, 'u'));
+// avg_br
+// br
+// frame
+// out
+// PSNR
+// q
+// f_size
+// s_size
+// st
+// time
+// type
+const getStats = (statsStr, stats) => stats.reduce((final, stat) => {
+  const match = statsStr.match(new RegExp(`${stat}=\\s*(?<value>[^\\s]+)`, 'u'));
   if (match) {
     const { value } = match.groups;
-    return value;
+    return { ...final, [stat]: value };
   }
 
-  return null;
-};
+  return { ...final };
+}, {});
 
 const logProgress = ({ pid }) => (stderr) => {
-  process.stdout.write(`${pid}: ${stderr}`);
+  const stats = getStats(String(stderr), [
+    'q',
+    'time',
+    'speed',
+  ]);
 
-  const speed = getStat(String(stderr), 'speed')?.replace('x', '');
+  const statsStr = Object.keys(stats).reduce((final, key) => `${final} ${key}=${stats[key]}`, '');
+
+  // process.stdout.clearLine(0);
+  process.stdout.cursorTo(0);
+  process.stdout.write(`${pid}: ${statsStr}`);
+
+  const { speed } = stats;
 
   if (speed) {
-    if (Number(speed) < 1) {
+    if (Number(speed.replace('x', '')) < 1) {
       logger.warn(pid, 'slow transcode, consider lowering quality');
     }
   }
