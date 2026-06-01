@@ -3,9 +3,9 @@ const { utils } = require('automata-utils');
 const probe = require('../cli/probe');
 
 const { logger } = utils;
-
 // [webm @ 0x5b58e2446340] Only VP8 or VP9 or AV1 video and Vorbis or Opus audio
 // and WebVTT subtitles are supported for WebM.
+// https://support.mozilla.org/en-US/kb/audio-and-video-firefox#w_audio-codecs
 const isWebm = (format) => /webm/iu.test(format);
 const isMp4 = (format) => /mp4/iu.test(format);
 const isMp3 = (format) => /mp3/iu.test(format);
@@ -17,6 +17,7 @@ const isVP8 = (codec) => /vp8/iu.test(codec);
 const isVP9 = (codec) => /vp9/iu.test(codec);
 const isAV1 = (codec) => /av1/iu.test(codec);
 const isHevc = (codec) => /hevc/iu.test(codec);
+const isAc3 = (codec) => /ac3/iu.test(codec);
 
 const SKIP_WARNING = [
   // container swap ok
@@ -74,14 +75,19 @@ const subtitleMime = (format) => {
 
 const audioCopyOptions = async (path, streamIndex) => {
   const { audios, format } = await probe(path);
+  const { codec } = audios.find(({ index }) => index === streamIndex);
 
   let codecOptions = '-c copy -f mp4';
   let mime = audioMime('mp4');
 
-  if (isWebm(format)) {
-    const { codec } = audios.find(({ index }) => index === streamIndex);
+  if (isAc3(codec)) {
+    // codecOptions = '-c copy -f mp4';
+    // mime = audioMime(null, 'ac3');
 
-    if (isVorbis(codec) || isOpus(codec)) {
+    // not supported. let client request for transcode
+    throw new Error('FF doesn not support ac3');
+  } else if (isWebm(format)) {
+    if (isVorbis(codec) || isOpus(codec) || isAc3(codec)) {
       codecOptions = '-c copy -f webm';
       mime = audioMime('webm', codec);
     } else if (!skipWarning(format, codec)) {
@@ -104,22 +110,21 @@ const audioCopyOptions = async (path, streamIndex) => {
 
 const videoCopyOptions = async (path) => {
   const { format, video } = await probe(path);
+  const { codec } = video;
 
   let codecOptions = '-c copy -f mp4';
   let mime = videoMime('mp4');
 
-  if (isWebm(format)) {
-    const { codec } = video;
-
+  if (isHevc(codec)) {
+    // (In some cases? limited support according to mdc)
+    // Firefox is capable to decode,
+    // but takes much longer than full transcode
+    throw new Error('FF support less than optimal:', codec);
+  } else if (isWebm(format)) {
     if (isVP8(codec) || isVP9(codec) || isAV1(codec)) {
       codecOptions = '-c copy -f webm';
       // video/webm?
       mime = videoMime('webm', codec);
-    } else if (isHevc(codec)) {
-      // (In some cases? limited support according to mdc)
-      // Firefox is capable to decode,
-      // but takes much longer than full transcode
-      throw new Error('transcode code', codec);
     } else if (!skipWarning(format, codec)) {
       // probably fails to decode, redirect to /transcode ?
       logger.warn('Unsupported video ?', format, codec);
