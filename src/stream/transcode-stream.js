@@ -21,37 +21,37 @@ const { logger } = utils;
 // st
 // time
 // type
-const getStats = (statsStr, stats) => stats.reduce((final, stat) => {
-  const match = statsStr.match(new RegExp(`${stat}=\\s*(?<value>[^\\s]+)`, 'u'));
-  if (match) {
-    const { value } = match.groups;
-    return { ...final, [stat]: value };
-  }
+// const getStats = (statsStr, stats) => stats.reduce((final, stat) => {
+//   const match = statsStr.match(new RegExp(`${stat}=\\s*(?<value>[^\\s]+)`, 'u'));
+//   if (match) {
+//     const { value } = match.groups;
+//     return { ...final, [stat]: value };
+//   }
 
-  return { ...final };
-}, {});
+//   return { ...final };
+// }, {});
 
-const logProgress = ({ pid }) => (stderr) => {
-  const stats = getStats(String(stderr), [
-    'q',
-    'time',
-    'speed',
-  ]);
+// const logProgress = ({ pid }) => (stderr) => {
+//   const stats = getStats(String(stderr), [
+//     'q',
+//     'time',
+//     'speed',
+//   ]);
 
-  const statsStr = Object.keys(stats).reduce((final, key) => `${final} ${key}=${stats[key]}`, '');
+// const statsStr = Object.keys(stats).reduce((final, key) => `${final} ${key}=${stats[key]}`, '');
 
-  // process.stdout.clearLine(0);
-  process.stdout.cursorTo(0);
-  process.stdout.write(`${pid}: ${statsStr}`);
+//   // process.stdout.clearLine(0);
+//   process.stdout.cursorTo(0);
+//   process.stdout.write(`${pid}: ${statsStr}`);
 
-  const { speed } = stats;
+//   const { speed } = stats;
 
-  if (speed) {
-    if (Number(speed.replace('x', '')) < 1) {
-      logger.warn(pid, 'slow transcode, consider lowering quality');
-    }
-  }
-};
+//   if (speed) {
+//     if (Number(speed.replace('x', '')) < 1) {
+//       logger.warn(pid, 'slow transcode, consider lowering quality');
+//     }
+//   }
+// };
 
 const postProcess = (mime, tmpFile, cacheFile) => {
   logger.info('post-process');
@@ -131,7 +131,7 @@ const transcodeStream = (type) => async (req, res, next) => {
 
   proc.on('close', (code, signal) => {
     const success = code === 0 && signal === null;
-    logger.info(proc.pid, 'close:', 'success:', success, 'code:', code, 'signal:', signal);
+    logger.info(proc.pid, 'proc close:', 'success:', success, 'code:', code, 'signal:', signal);
 
     if (!success) {
       logger.info(proc.pid, 'removing cache');
@@ -148,7 +148,7 @@ const transcodeStream = (type) => async (req, res, next) => {
   });
 
   proc.on('exit', (code, signal) => {
-    console.log(proc.pid, 'exit', code, signal);
+    console.log(proc.pid, 'proc exit', 'code:', code, 'signal:', signal);
   });
 
   req.on('close', () => {
@@ -156,6 +156,7 @@ const transcodeStream = (type) => async (req, res, next) => {
 
     const HEAD_START = 0;
     setTimeout(() => {
+      logger.info(proc.pid, 'exitCode', proc.exitCode);
       if (proc.exitCode === null) {
         logger.info(proc.pid, 'killing');
 
@@ -164,7 +165,8 @@ const transcodeStream = (type) => async (req, res, next) => {
     }, HEAD_START);
   });
 
-  proc.stderr.on('data', logProgress(proc));
+  proc.stderr.pipe(process.stdout);
+  // on('data', logProgress(proc));
 };
 
 module.exports = transcodeStream;
