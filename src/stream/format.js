@@ -1,6 +1,7 @@
 const { utils } = require('automata-utils');
 
 const probe = require('../cli/probe');
+const { createNotSupported } = require('../errors');
 
 const { logger } = utils;
 // [webm @ 0x5b58e2446340] Only VP8 or VP9 or AV1 video and Vorbis or Opus audio
@@ -85,7 +86,7 @@ const audioCopyOptions = async (path, streamIndex) => {
     // mime = audioMime(null, 'ac3');
 
     // not supported. let client request for transcode
-    throw new Error('FF doesn not support ac3');
+    throw createNotSupported({ codec });
   } else if (isWebm(format)) {
     if (isVorbis(codec) || isOpus(codec) || isAc3(codec)) {
       codecOptions = '-c copy -f webm';
@@ -119,7 +120,7 @@ const videoCopyOptions = async (path) => {
     // (In some cases? limited support according to mdc)
     // Firefox is capable to decode,
     // but takes much longer than full transcode
-    throw new Error('FF support less than optimal:', codec);
+    throw createNotSupported({ codec });
   } else if (isWebm(format)) {
     if (isVP8(codec) || isVP9(codec) || isAV1(codec)) {
       codecOptions = '-c copy -f webm';
