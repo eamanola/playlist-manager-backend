@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-npm run lint
-npm test
-npx bump-pkg-json PATCH
+pnpm run lint
+pnpm test
+pnpx bump-pkg-json PATCH
 git add package.json
