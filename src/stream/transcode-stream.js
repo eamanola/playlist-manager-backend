@@ -75,11 +75,11 @@ const postProcess = (mime, tmpFile, cacheFile) => {
     exec([cmd1, ...args1].join(' '), (moveErr) => {
       logger.info(moveErr);
 
-      logger.info('remove tmp');
+      logger.info('removing tmp files');
       rm(tmpFile);
     });
   } else {
-    logger.info('move tmp to cache');
+    logger.info('move tmp files to cache');
     rename(tmpFile, cacheFile);
   }
 };
@@ -134,7 +134,7 @@ const transcodeStream = (type) => async (req, res, next) => {
     logger.info(proc.pid, 'proc close:', 'success:', success, 'code:', code, 'signal:', signal);
 
     if (!success) {
-      logger.info(proc.pid, 'removing cache');
+      logger.info(proc.pid, 'removing tmp files');
       rm(output);
 
       next({ message: 'transcode failed' });

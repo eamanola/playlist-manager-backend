@@ -1,4 +1,4 @@
-const { sep } = require('node:path');
+const { join } = require('node:path');
 
 const express = require('express');
 
@@ -13,7 +13,7 @@ const dumpIfMissing = async (req, res, next) => {
   const { path, filename } = params;
 
   const dstDir = await outputDir('fonts', decodeURIComponent(path));
-  const font = [dstDir, filename].join(sep);
+  const font = join(dstDir, filename);
 
   if (!await exists(font)) {
     const cmd = `ffmpeg -dump_attachment:t "" -i "${escapePath(decodeURIComponent(path))}"`;
