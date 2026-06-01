@@ -10,14 +10,14 @@ const createNotFound = ({ path }) => ({
 });
 
 const notSupported = {
-  message: 'Codec not supported, please transcode',
-  name: 'notSupported',
-  status: 400,
+  message: 'Codec not supported by browser, please transcode',
+  name: 'Unsupported Media Type',
+  status: 415,
 };
 
 const createNotSupported = ({ codec }) => ({
   ...notSupported,
-  message: `${codec} not supported, please transcode`,
+  message: `${codec} not supported by browser, please transcode`,
 });
 
 module.exports = {
