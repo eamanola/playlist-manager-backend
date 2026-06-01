@@ -25,6 +25,7 @@ const extractStream = (type) => async (req, res, next) => {
     '-y',
     '-i',
     `"${escapePath(path)}"`,
+    '-map_chapters -1 -map_metadata -1',
     '-map',
     `0:${streamIndex}`,
     ...codecOptions.split(' '),

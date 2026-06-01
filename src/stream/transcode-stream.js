@@ -79,6 +79,7 @@ const transcodeStream = (type) => async (req, res, next) => {
     '-stats',
     '-i',
     `"${path}"`,
+    '-map_chapters -1 -map_metadata -1',
     '-map',
     `0:${streamIndex}`,
     ...codecOptions.split(' '),
