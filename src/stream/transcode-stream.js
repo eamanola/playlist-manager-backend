@@ -10,14 +10,34 @@ const { transcode } = require('./format');
 
 const { logger } = utils;
 
+const getStat = (stats, stat) => {
+  // avg_br
+  // br
+  // frame
+  // out
+  // PSNR
+  // q
+  // f_size
+  // s_size
+  // st
+  // time
+  // type
+
+  const match = `${stats}`.match(new RegExp(`${stat}=\\s*(?<value>[^\\s]+)`, 'u'));
+  if (match) {
+    const { value } = match.groups;
+    return value;
+  }
+
+  return null;
+};
+
 const logProgress = ({ pid }) => (stderr) => {
-  // logger.info(pid, `${stderr}`);
   process.stdout.write(`${pid}: ${stderr}`);
 
-  const match = `${stderr}`.match(/speed=\s*(?<speed>\d+?(?:\.\d+)?)x/u);
-  if (match) {
-    const { speed } = match.groups;
+  const speed = getStat(String(stderr), 'speed')?.replace('x', '');
 
+  if (speed) {
     if (Number(speed) < 1) {
       logger.warn(pid, 'slow transcode, consider lowering quality');
     }
