@@ -19,6 +19,7 @@ const set = (files) => {
 };
 
 module.exports = {
+  all: () => [...cache],
   getId,
   getPath,
   set,

@@ -7,6 +7,7 @@ const { utils } = require('automata-utils');
 const escapePath = require('../utils/escape-path');
 const { cachePath } = require('./output-path');
 const { copy } = require('./format');
+const cache = require('../temp-cache');
 
 const { logger } = utils;
 
@@ -14,11 +15,12 @@ const extractStream = (type) => async (req, res, next) => {
   logger.info('-- extract');
   const { params } = req;
 
-  const { path, streamIndex } = params;
+  const { id, streamIndex } = params;
+  const path = cache.getPath(id);
 
   const { codecOptions, mime } = await copy(type, path, Number(streamIndex));
 
-  const output = await cachePath(type, path, streamIndex);
+  const output = await cachePath(type, id, streamIndex);
 
   const cmd = 'ffmpeg';
   const args = [

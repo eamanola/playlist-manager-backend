@@ -7,6 +7,7 @@ const kill = require('tree-kill');
 
 const { cachePath, tmpPath } = require('./output-path');
 const { transcode } = require('./format');
+const tempCache = require('../temp-cache');
 
 const { logger } = utils;
 
@@ -88,11 +89,12 @@ const transcodeStream = (type) => async (req, res, next) => {
   logger.info('-- transcode');
 
   const { params } = req;
-  const { path, streamIndex } = params;
+  const { id, streamIndex } = params;
+  const path = tempCache.getPath(id);
 
   const { codecOptions, mime } = transcode(type);
 
-  const output = await tmpPath(type, path, streamIndex);
+  const output = await tmpPath(type, id, streamIndex);
 
   const cmd = 'ffmpeg';
   const args = [
@@ -118,7 +120,7 @@ const transcodeStream = (type) => async (req, res, next) => {
     postProcess(
       mime,
       output,
-      await cachePath(type, path, streamIndex),
+      await cachePath(type, id, streamIndex),
     );
   };
 

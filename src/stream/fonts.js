@@ -7,16 +7,18 @@ const exists = require('../utils/exists');
 const escapePath = require('../utils/escape-path');
 const { outputDir } = require('./output-path');
 const checkAccess = require('./check-access');
+const cache = require('../temp-cache');
 
 const dumpIfMissing = async (req, res, next) => {
   const { params } = req;
-  const { path, filename } = params;
+  const { id, filename } = params;
 
-  const dstDir = await outputDir('fonts', decodeURIComponent(path));
+  const dstDir = await outputDir('fonts', id);
   const font = join(dstDir, filename);
 
   if (!await exists(font)) {
-    const cmd = `ffmpeg -dump_attachment:t "" -i "${escapePath(decodeURIComponent(path))}"`;
+    const path = cache.getPath(id);
+    const cmd = `ffmpeg -dump_attachment:t "" -i "${escapePath(path)}"`;
 
     try {
       // this successfully fails
@@ -33,17 +35,17 @@ const dumpIfMissing = async (req, res, next) => {
 
 const serve = async (req, res) => {
   const { params } = req;
-  const { path } = params;
+  const { id } = params;
 
-  const dstDir = await outputDir('fonts', decodeURIComponent(path));
+  const dstDir = await outputDir('fonts', id);
 
   return express.static(dstDir)(req, res);
 };
 
 const router = express.Router();
 
-router.use('/:path', checkAccess);
-router.use('/:path/:filename', dumpIfMissing);
-router.use('/:path', serve);
+router.use('/:id', checkAccess);
+router.use('/:id/:filename', dumpIfMissing);
+router.use('/:id', serve);
 
 module.exports = { router };

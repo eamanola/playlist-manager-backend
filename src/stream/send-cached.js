@@ -11,9 +11,9 @@ const { logger } = utils;
 const sendCached = (type) => async (req, res, next) => {
   const { params } = req;
 
-  const { path, streamIndex } = params;
+  const { id, streamIndex } = params;
 
-  const output = await cachePath(type, path, streamIndex);
+  const output = await cachePath(type, id, streamIndex);
 
   if (!await exists(output)) {
     next();
