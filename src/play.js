@@ -2,6 +2,7 @@ const { errors, utils } = require('automata-utils');
 
 const canAccess = require('./utils/can-access');
 const play = require('./cli/play');
+const cache = require('./temp-cache');
 
 const { logger } = utils;
 
@@ -16,7 +17,8 @@ const startPlay = (path) => {
 
 const router = (req, res, next) => {
   const { body } = req;
-  const { path } = body;
+  const { id } = body;
+  const path = cache.getPath(id);
 
   logger.info(`play ${path}`);
   try {
