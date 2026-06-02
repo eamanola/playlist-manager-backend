@@ -5,7 +5,6 @@ const { errors } = require('automata-utils');
 const canAccess = require('./utils/can-access');
 const play = require('./cli/play');
 const { router } = require('./play');
-const { getVideos: initTempCache } = require('./videos');
 const cache = require('./temp-cache');
 
 const app = express();
@@ -17,7 +16,7 @@ jest.mock('./cli/play');
 
 describe('play router', () => {
   afterEach(() => play.mockClear());
-  beforeAll(() => initTempCache());
+  beforeAll(() => cache.init());
 
   it('should call play with path', async () => {
     const { id } = cache.all()[0];

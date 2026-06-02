@@ -75,8 +75,6 @@ const getVideos = async () => {
   try {
     const files = await getFiles();
 
-    cache.set(files);
-
     const formatted = files.map((mediaLibFileList, index) => ({
       mediaLib: MEDIA_LIBS[index],
       videos: mediaLibFileList.map(({ name, path }) => ({
@@ -113,6 +111,5 @@ const router = async (req, res, next) => {
 };
 
 module.exports = {
-  getVideos,
   router,
 };

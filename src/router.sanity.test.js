@@ -6,6 +6,7 @@ const express = require('express');
 
 const { cachePath } = require('./create-thumbnails');
 const { router } = require('.');
+const cache = require('./temp-cache');
 
 let api;
 
@@ -15,7 +16,9 @@ let api;
 // make sure config is setup
 
 describe('test paths', () => {
-  beforeAll(() => {
+  beforeAll(async () => {
+    await cache.init();
+
     const app = express();
     app.use(express.json());
     app.use(router({ db: global.db }));
