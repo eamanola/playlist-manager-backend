@@ -64,6 +64,13 @@ const addIds = ({ videos, ...rest1 }) => ({
   ...rest1,
 });
 
+const removePath = ({ videos, ...rest1 }) => ({
+  videos: videos.map(({ path, ...rest2 }) => ({
+    ...rest2,
+  })),
+  ...rest1,
+});
+
 const getVideos = async () => {
   try {
     const files = await getFiles();
@@ -81,9 +88,11 @@ const getVideos = async () => {
 
     const withId = withMediaInfo.map(addIds);
 
+    const pathsRemoved = withId.map(removePath);
+
     // console.log(util.inspect(withId, {showHidden: false, depth: null, colors: true}));
     // console.log(util.inspect(videoFiles, {showHidden: false, depth: null, colors: true}));
-    return withId;
+    return pathsRemoved;
   } catch (err) {
     if (err.code === 'ENOENT') {
       throw createNotFound(err);
