@@ -39,6 +39,7 @@ describe('test paths', () => {
         yup.object().shape({
           mediaLib: yup.string().required(),
           videos: yup.array().of(yup.object().shape({
+            filename: yup.string().required(),
             id: yup.string().required(),
           })).strict(),
         }),
