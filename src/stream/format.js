@@ -148,6 +148,24 @@ const videoCopyOptions = async (path) => {
   };
 };
 
+const subTitleCopyOptions = async (path, streamIndex) => {
+  const probes = await probe(path);
+  const subtitle = probes.subtitles.find(({ index }) => index === streamIndex);
+  const { codec } = subtitle;
+
+  if (isWebVTT(codec)) {
+    return {
+      codecOptions: '-c copy -f webvtt',
+      mime: subtitleMime('webvtt'),
+    };
+  }
+
+  return {
+    codecOptions: '-c copy -f ass',
+    mime: subtitleMime('ass'),
+  };
+};
+
 const copy = async (type, path, streamIndex) => {
   // console.log(audios, format, video);
   if (type === 'audio') {
@@ -155,12 +173,7 @@ const copy = async (type, path, streamIndex) => {
   }
 
   if (type === 'subtitle') {
-    const mime = subtitleMime('ass');
-
-    return {
-      codecOptions: '-c copy -f ass',
-      mime,
-    };
+    return subTitleCopyOptions(path, streamIndex);
   }
 
   if (type === 'video') {
