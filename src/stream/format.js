@@ -20,20 +20,23 @@ const isAV1 = (codec) => /av1/iu.test(codec);
 const isHevc = (codec) => /hevc/iu.test(codec);
 const isAc3 = (codec) => /ac3/iu.test(codec);
 const isMSMpeg4v2 = (codec) => /msmpeg4v2/iu.test(codec);
+const isAAC = (codec) => /aac/iu.test(codec);
 
-const SKIP_WARNING = [
-  // container swap ok
-  { codec: 'aac', format: 'matroska,webm' },
-  // container swap ok
-  { codec: 'flac', format: 'matroska,webm' },
-  // container swap ok
-  { codec: 'h264', format: 'matroska,webm' },
-  // { codec: 'hevc', format: 'matroska,webm' },
-];
+// const SKIP_WARNING = [
+//   // container swap ok
+//   { codec: 'aac', format: 'matroska,webm' },
+//   // container swap ok
+//   { codec: 'flac', format: 'matroska,webm' },
+//   // container swap ok
+//   { codec: 'h264', format: 'matroska,webm' },
+//   // { codec: 'hevc', format: 'matroska,webm' },
+// ];
 
-const skipWarning = (format, codec) => SKIP_WARNING.find(
-  ({ codec: c, format: f }) => c === codec && f === format,
-);
+// const skipWarning = (/*format, codec*/) => false;
+
+//   SKIP_WARNING.some(
+//   ({ codec: c, format: f }) => c === codec && f === format,
+// );
 
 const mimeToExt = (mime) => {
   const { type, format } = mime.match(/^(?<type>[^/]+)\/(?<format>.+)/u).groups;
@@ -79,32 +82,26 @@ const audioCopyOptions = async (path, streamIndex) => {
   const { audios, format } = await probe(path);
   const { codec } = audios.find(({ index }) => index === streamIndex);
 
-  let codecOptions = '-c copy -f mp4';
-  let mime = audioMime('mp4');
+  let codecOptions;
+  let mime;
 
   if (isMp3(codec)) {
     codecOptions = '-c copy -f mp3';
     mime = audioMime('mp3', null);
   } else if (isAc3(codec)) {
-    // codecOptions = '-c copy -f mp4';
-    // mime = audioMime(null, 'ac3');
-
-    // not supported. let client request for transcode
     throw createNotSupported({ codec });
-  } else if (isWebm(format)) {
-    if (isVorbis(codec) || isOpus(codec) || isAc3(codec)) {
-      codecOptions = '-c copy -f webm';
-      mime = audioMime('webm', codec);
-    } else if (!skipWarning(format, codec)) {
-      // probably fails to decode, redirect to /transcode ?
-      logger.warn('Unsupported audio ?', format, codec);
-    }
-  } else if (isMp4(format)) {
+  } else if (isVorbis(codec) || isOpus(codec)) {
+    codecOptions = '-c copy -f webm';
+    mime = audioMime('webm', codec);
+  } else if (isMp4(format) || isAAC(codec)) {
     codecOptions = '-c copy -f mp4';
     mime = audioMime('mp4');
   } else {
-    // probably fails to decode, redirect to /transcode ?
-    logger.error('Unsupported audio ?', format);
+    logger.warn('Unhandled audio codec / format?', codec, format);
+
+    // default to
+    codecOptions = '-c copy -f mp4';
+    mime = audioMime('mp4');
   }
 
   return {
@@ -117,29 +114,27 @@ const videoCopyOptions = async (path) => {
   const { format, video } = await probe(path);
   const { codec } = video;
 
-  let codecOptions = '-c copy -f mp4';
-  let mime = videoMime('mp4');
+  let codecOptions;
+  let mime;
 
+  // hevc:
+  // (In some cases? limited support according to mdc)
+  // Firefox is capable to decode,
+  // but takes much longer than full transcode
   if (isHevc(codec) || isMSMpeg4v2(codec)) {
-    // (In some cases? limited support according to mdc)
-    // Firefox is capable to decode,
-    // but takes much longer than full transcode
     throw createNotSupported({ codec });
-  } else if (isWebm(format)) {
-    if (isVP8(codec) || isVP9(codec) || isAV1(codec)) {
-      codecOptions = '-c copy -f webm';
-      // video/webm?
-      mime = videoMime('webm', codec);
-    } else if (!skipWarning(format, codec)) {
-      // probably fails to decode, redirect to /transcode ?
-      logger.warn('Unsupported video ?', format, codec);
-    }
+  } if (isVP8(codec) || isVP9(codec) || isAV1(codec)) {
+    codecOptions = '-c copy -f webm';
+    mime = videoMime('webm', codec);
   } else if (isMp4(format)) {
     codecOptions = '-c copy -f mp4';
     mime = videoMime('mp4');
   } else {
-    // probably fails to decode, redirect to /transcode ?
-    logger.warn('Unsupported video ?', format);
+    logger.warn('Unhandled video codec/format ?', codec, format);
+
+    // default to
+    codecOptions = '-c copy -f mp4';
+    mime = videoMime('mp4');
   }
 
   return {
@@ -167,7 +162,6 @@ const subTitleCopyOptions = async (path, streamIndex) => {
 };
 
 const copy = async (type, path, streamIndex) => {
-  // console.log(audios, format, video);
   if (type === 'audio') {
     return audioCopyOptions(path, streamIndex);
   }
