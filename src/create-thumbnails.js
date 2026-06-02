@@ -1,7 +1,6 @@
 const { mkdir } = require('node:fs/promises');
 const { join } = require('node:path');
 
-const { array, string, object } = require('yup');
 const { errors, utils } = require('automata-utils');
 
 const canAccess = require('./utils/can-access');
@@ -9,14 +8,16 @@ const exists = require('./utils/exists');
 const thumbnail = require('./cli/thumbnail');
 const probe = require('./cli/probe');
 const { THUMB_DIR } = require('./config');
+const cache = require('./temp-cache');
 
-const { accessDenied, createParamError } = errors;
+const { accessDenied } = errors;
 const { logger } = utils;
 
 const cachePath = (cacheId) => join(THUMB_DIR, `${cacheId}.jpg`);
 
-const createThumbnail = async (cacheId, path) => {
-  const output = cachePath(cacheId);
+const createThumbnail = async (id, path) => {
+  const output = cachePath(id);
+  console.log(output);
 
   if (!await exists(output)) {
     // logger.info('create thumb', path);
@@ -37,26 +38,15 @@ const createThumbnail = async (cacheId, path) => {
   return output;
 };
 
-const listSchema = array().of(
-  object().shape({
-    cacheId: string().required(),
-    path: string().required(),
-  }).noUnknown().strict(),
-);
-
 const generateThumbnails = async (list) => {
   await mkdir(THUMB_DIR, { recursive: true });
 
-  try {
-    await listSchema.validate(list);
-  } catch (err) {
-    throw createParamError(err);
-  }
+  await Promise.all((list || []).map((id) => {
+    const path = cache.getPath(id);
 
-  await Promise.all((list || []).map(({ cacheId, path }) => {
     if (path && !canAccess(path)) throw accessDenied;
 
-    return createThumbnail(cacheId, path);
+    return createThumbnail(id, path);
   }));
 
   return { message: 'ok' };
