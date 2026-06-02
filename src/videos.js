@@ -75,6 +75,9 @@ const getVideos = async () => {
   try {
     const files = await getFiles();
 
+    // refresh
+    cache.set(files);
+
     const formatted = files.map((mediaLibFileList, index) => ({
       mediaLib: MEDIA_LIBS[index],
       videos: mediaLibFileList.map(({ name, path }) => ({

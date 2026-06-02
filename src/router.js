@@ -12,11 +12,8 @@ const { router: played } = require('./played');
 const { router: subtitle } = require('./stream/subtitle');
 const { router: video } = require('./stream/video');
 const { router: videos } = require('./videos');
-const cache = require('./temp-cache');
 
 const { errorHandler } = middlewares;
-
-cache.init();
 
 const router = ({ db }) => {
   const expressRouter = express.Router();

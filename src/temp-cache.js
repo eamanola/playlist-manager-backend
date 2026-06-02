@@ -39,6 +39,8 @@ const init = async () => {
   set(await getFiles());
 };
 
+if (!cache) init();
+
 module.exports = {
   all: () => [...cache],
   getId,
