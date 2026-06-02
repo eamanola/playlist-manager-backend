@@ -1,15 +1,10 @@
 const { join } = require('node:path');
-const crypto = require('node:crypto');
 // const util = require('node:util');
 
 const { MEDIA_LIBS } = require('./config');
 const findFiles = require('./cli/finder');
 const { createNotFound } = require('./errors');
-
-// TODO: move to db
-let cache = [];
-const getId = (path) => cache.find(({ path: cachePath }) => path === cachePath)?.id;
-// const getPath = (id) => cache.find(({ id: cacheId }) => id === cacheId)?.path;
+const cache = require('./temp-cache');
 
 const getFiles = async () => {
   try {
@@ -62,7 +57,7 @@ const parseMediaInfo = async (videoFiles) => {
 
 const addIds = ({ videos, ...rest1 }) => ({
   videos: videos.map(({ path, ...rest2 }) => ({
-    id: getId(path),
+    id: cache.getId(path),
     path,
     ...rest2,
   })),
@@ -73,15 +68,7 @@ const getVideos = async () => {
   try {
     const files = await getFiles();
 
-    // TODO
-    cache = files
-      .flat()
-      .map(({ name, path }) => {
-        const fullpath = join(path, name);
-        const id = crypto.createHash('md5').update(fullpath).digest('hex');
-
-        return { id, path: fullpath };
-      });
+    cache.set(files);
 
     const formatted = files.map((mediaLibFileList, index) => ({
       mediaLib: MEDIA_LIBS[index],
