@@ -7,29 +7,28 @@ const { logger } = utils;
 // [webm @ 0x5b58e2446340] Only VP8 or VP9 or AV1 video and Vorbis or Opus audio
 // and WebVTT subtitles are supported for WebM.
 // https://support.mozilla.org/en-US/kb/audio-and-video-firefox#w_audio-codecs
-const isWebm = (format) => /webm/iu.test(format);
-const isMp4 = (format) => /mp4/iu.test(format);
-const isMp3 = (format) => /mp3/iu.test(format);
-const isWebVTT = (format) => /webvtt/iu.test(format);
-const isAss = (format) => /ass/iu.test(format);
-const isVorbis = (codec) => /vorbis/iu.test(codec);
-const isOpus = (codec) => /opus/iu.test(codec);
-const isVP8 = (codec) => /vp8/iu.test(codec);
-const isVP9 = (codec) => /vp9/iu.test(codec);
-const isAV1 = (codec) => /av1/iu.test(codec);
-const isHevc = (codec) => /hevc/iu.test(codec);
-const isAc3 = (codec) => /ac3/iu.test(codec);
-const isMSMpeg4v2 = (codec) => /msmpeg4v2/iu.test(codec);
-const isAAC = (codec) => /aac/iu.test(codec);
+const isWebm = (format) => /^webm$/iu.test(format);
+const isMp4 = (format) => /^mp4$/iu.test(format);
+const isMp3 = (format) => /^mp3$/iu.test(format);
+const isWebVTT = (format) => /^webvtt$/iu.test(format);
+const isAss = (format) => /^ass$/iu.test(format);
+
+const isVorbis = (codec) => /^vorbis$/iu.test(codec);
+const isOpus = (codec) => /^opus$/iu.test(codec);
+const isVP8 = (codec) => /^vp8$/iu.test(codec);
+const isVP9 = (codec) => /^vp9$/iu.test(codec);
+const isAV1 = (codec) => /^av1$/iu.test(codec);
+const isHevc = (codec) => /^hevc$/iu.test(codec);
+const isAc3 = (codec) => /^ac3$/iu.test(codec);
+const isMSMpeg4v2 = (codec) => /^msmpeg4v2$/iu.test(codec);
+const isAAC = (codec) => /^aac$/iu.test(codec);
+const isH264 = (codec) => /^h264$/iu.test(codec);
 
 // const SKIP_WARNING = [
 //   // container swap ok
-//   { codec: 'aac', format: 'matroska,webm' },
 //   // container swap ok
 //   { codec: 'flac', format: 'matroska,webm' },
 //   // container swap ok
-//   { codec: 'h264', format: 'matroska,webm' },
-//   // { codec: 'hevc', format: 'matroska,webm' },
 // ];
 
 // const skipWarning = (/*format, codec*/) => false;
@@ -126,7 +125,7 @@ const videoCopyOptions = async (path) => {
   } if (isVP8(codec) || isVP9(codec) || isAV1(codec)) {
     codecOptions = '-c copy -f webm';
     mime = videoMime('webm', codec);
-  } else if (isMp4(format)) {
+  } else if (isMp4(format) || isH264(codec)) {
     codecOptions = '-c copy -f mp4';
     mime = videoMime('mp4');
   } else {
@@ -148,16 +147,24 @@ const subTitleCopyOptions = async (path, streamIndex) => {
   const subtitle = probes.subtitles.find(({ index }) => index === streamIndex);
   const { codec } = subtitle;
 
+  let codecOptions;
+  let mime;
+
   if (isWebVTT(codec)) {
-    return {
-      codecOptions: '-c copy -f webvtt',
-      mime: subtitleMime('webvtt'),
-    };
+    codecOptions = '-c copy -f webvtt';
+    mime = subtitleMime('webvtt');
+  } else if (isAss(codec)) {
+    codecOptions = '-c copy -f ass';
+    mime = subtitleMime('ass');
+  } else {
+    console.warn('defaulting to ass', codec);
+    codecOptions = '-c copy -f ass';
+    mime = subtitleMime('ass');
   }
 
   return {
-    codecOptions: '-c copy -f ass',
-    mime: subtitleMime('ass'),
+    codecOptions,
+    mime,
   };
 };
 
