@@ -2,7 +2,8 @@ const probe = require('./cli/probe');
 const cache = require('./temp-cache');
 
 const getProbes = async (ids) => {
-  const probes = await Promise.all(ids.map((id) => probe(cache.getPath(id))));
+  const paths = ids.map((id) => cache.getPath(id));
+  const probes = await Promise.all(paths.map((path) => probe(path)));
 
   return probes.map((probeObj, index) => ({
     id: ids[index],
