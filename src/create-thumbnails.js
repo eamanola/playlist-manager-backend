@@ -13,11 +13,10 @@ const cache = require('./temp-cache');
 const { accessDenied } = errors;
 const { logger } = utils;
 
-const cachePath = (cacheId) => join(THUMB_DIR, `${cacheId}.jpg`);
+const cachePath = (id) => join(THUMB_DIR, `${id}.jpg`);
 
 const createThumbnail = async (id, path) => {
   const output = cachePath(id);
-  console.log(output);
 
   if (!await exists(output)) {
     // logger.info('create thumb', path);
