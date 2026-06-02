@@ -37,15 +37,16 @@ const parseMediaInfo = async (videoFiles) => {
   const parser = await import('media-filename-parser');
 
   const parsedVideosFiles = videoFiles.map(({ mediaLib, videos }) => {
-    const parsedVideos = videos.map((fullpath) => {
-      const path = fullpath.replace(new RegExp(`^${mediaLib}/`, 'u'), '');
-      const season = parser.season(path);
-      const title = parser.title(path);
-      const year = parser.year(path);
-      const episode = parser.episode(path);
+    const parsedVideos = videos.map(({ path, ...rest }) => {
+      const subpath = path.replace(new RegExp(`^${mediaLib}/`, 'u'), '');
+      const season = parser.season(subpath);
+      const title = parser.title(subpath);
+      const year = parser.year(subpath);
+      const episode = parser.episode(subpath);
 
       return {
-        path: fullpath,
+        path,
+        ...rest,
         season,
         title,
         year,
@@ -84,7 +85,9 @@ const getVideos = async () => {
 
     const formatted = files.map((mediaLibFileList, index) => ({
       mediaLib: MEDIA_LIBS[index],
-      videos: mediaLibFileList.map(({ name, path }) => join(path, name)),
+      videos: mediaLibFileList.map(({ name, path }) => ({
+        filename: name, path: join(path, name),
+      })),
     }));
 
     const withMediaInfo = await parseMediaInfo(formatted);
