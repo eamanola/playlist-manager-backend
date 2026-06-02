@@ -19,6 +19,7 @@ const isVP9 = (codec) => /vp9/iu.test(codec);
 const isAV1 = (codec) => /av1/iu.test(codec);
 const isHevc = (codec) => /hevc/iu.test(codec);
 const isAc3 = (codec) => /ac3/iu.test(codec);
+const isMSMpeg4v2 = (codec) => /msmpeg4v2/iu.test(codec);
 
 const SKIP_WARNING = [
   // container swap ok
@@ -81,7 +82,10 @@ const audioCopyOptions = async (path, streamIndex) => {
   let codecOptions = '-c copy -f mp4';
   let mime = audioMime('mp4');
 
-  if (isAc3(codec)) {
+  if (isMp3(codec)) {
+    codecOptions = '-c copy -f mp3';
+    mime = audioMime('mp3', null);
+  } else if (isAc3(codec)) {
     // codecOptions = '-c copy -f mp4';
     // mime = audioMime(null, 'ac3');
 
@@ -116,7 +120,7 @@ const videoCopyOptions = async (path) => {
   let codecOptions = '-c copy -f mp4';
   let mime = videoMime('mp4');
 
-  if (isHevc(codec)) {
+  if (isHevc(codec) || isMSMpeg4v2(codec)) {
     // (In some cases? limited support according to mdc)
     // Firefox is capable to decode,
     // but takes much longer than full transcode
