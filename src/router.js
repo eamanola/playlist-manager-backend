@@ -18,7 +18,6 @@ const { errorHandler } = middlewares;
 const router = ({ db }) => {
   const expressRouter = express.Router();
   expressRouter.post('/create-thumbnails', createThumbnails);
-  expressRouter.use('/fonts', fonts);
   expressRouter.post('/probes', probes);
   // /play{/:id} || /play/:id?
   expressRouter.put(['/play', '/play/:id'], play);
@@ -30,6 +29,7 @@ const router = ({ db }) => {
     expressRouter.use('/audio', audio);
     expressRouter.use('/subtitle', subtitle);
     expressRouter.use('/video', video);
+    expressRouter.use('/stream', fonts());
   }
   expressRouter.get('/videos', videos);
 
