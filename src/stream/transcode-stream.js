@@ -3,7 +3,6 @@ const { rm, rename } = require('node:fs/promises');
 const { createWriteStream } = require('node:fs');
 
 const { utils } = require('automata-utils');
-const kill = require('tree-kill');
 
 const { cachePath, tmpPath } = require('./output-path');
 const { transcode } = require('./format');
@@ -85,18 +84,12 @@ const postProcess = (mime, tmpFile, cacheFile) => {
   }
 };
 
-const transcodeStream = () => async (req, res, next) => {
+const transcodeStream = async (id, type, streamIndex, { onError, onStart }) => {
   logger.info('-- transcode');
 
-  const { params } = req;
-  const { id, type, streamIndex } = params;
-
   const path = tempCache.getPath(id);
-
   const { codecOptions, mime } = transcode(type);
-
   const output = await tmpPath(id, type, streamIndex);
-
   const cmd = 'ffmpeg';
   const args = [
     '-y',
@@ -125,15 +118,20 @@ const transcodeStream = () => async (req, res, next) => {
     );
   };
 
-  res.setHeader('content-type', mime);
-  res.setHeader('transfer-encoding', 'chunked');
-  res.setHeader('connection', 'keep-alive');
-
-  const cache = createWriteStream(output);
   const proc = spawn([cmd, ...args].join(' '), null, { shell: true });
-  proc.stdout.pipe(res);
+  if (onStart) {
+    onStart({ mime, proc });
+  }
+
+  // send out to file
+  const cache = createWriteStream(output);
   proc.stdout.pipe(cache);
 
+  // log -stats
+  proc.stderr.pipe(process.stdout);
+  // proc.stderr.on('data', logProgress(proc));
+
+  // done
   proc.on('close', (code, signal) => {
     const success = code === 0 && signal === null;
     logger.info(proc.pid, 'proc close:', 'success:', success, 'code:', code, 'signal:', signal);
@@ -142,39 +140,21 @@ const transcodeStream = () => async (req, res, next) => {
       logger.info(proc.pid, 'removing tmp files');
       rm(output);
 
-      next(new Error('Transcode failed'));
+      if (onError) {
+        onError(new Error('Transcode failed'));
+      }
     } else {
       onSuccess();
     }
   });
 
-  cache.on('close', () => {
-    console.log(proc.pid, 'cache closed');
-  });
+  // cache.on('close', () => {
+  //   console.log(proc.pid, 'cache closed');
+  // });
 
-  proc.on('exit', (code, signal) => {
-    console.log(proc.pid, 'proc exit', 'code:', code, 'signal:', signal);
-  });
-
-  req.on('close', () => {
-    logger.info(proc.pid, 'connection closed');
-
-    const HEAD_START = 0;
-    setTimeout(() => {
-      // User navigates away - end transcoding
-      // TODO: client temporarily closes the connection.
-      // is this necessary?
-      logger.info(proc.pid, 'exitCode', proc.exitCode);
-      if (proc.exitCode === null) {
-        logger.info(proc.pid, 'killing');
-
-        kill(proc.pid, 'SIGKILL');
-      }
-    }, HEAD_START);
-  });
-
-  proc.stderr.pipe(process.stdout);
-  // on('data', logProgress(proc));
+  // proc.on('exit', (code, signal) => {
+  //   console.log(proc.pid, 'proc exit', 'code:', code, 'signal:', signal);
+  // });
 };
 
 module.exports = transcodeStream;

@@ -1,6 +1,5 @@
 const express = require('express');
 
-const transcodeStream = require('./transcode-stream');
 const {
   checkAccess,
   checkType,
@@ -8,19 +7,21 @@ const {
   extractStream,
   needsTranscode,
   serveStatic,
+  transcode,
 } = require('./middlewares');
 
 const createRouter = () => {
   const router = express.Router();
 
   // check valid enum for type
+  // one of audio, fonts, subtitle, video
   router.use('{/transcode}/:id/:type', checkType());
 
   // access control (placeholder)
   router.use('{/transcode}/:id', checkAccess());
 
   // transcode stream
-  router.get('/transcode/:id/:type/:streamIndex', transcodeStream());
+  router.get('/transcode/:id/:type/:streamIndex', transcode());
 
   // send processed
   router.use(serveStatic());
