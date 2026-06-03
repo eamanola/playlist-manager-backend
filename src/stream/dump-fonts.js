@@ -13,7 +13,7 @@ const { logger } = utils;
 const dumpFonts = async (id, filename) => {
   logger.info('-- dumping fonts', id);
 
-  const dstDir = await outputDir('fonts', id);
+  const dstDir = await outputDir(id, 'fonts');
   const output = join(dstDir, filename);
   const path = cache.getPath(id);
   const cmd = `ffmpeg -dump_attachment:t "" -n -i "${escapePath(path)}"`;

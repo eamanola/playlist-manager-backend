@@ -95,7 +95,7 @@ const transcodeStream = () => async (req, res, next) => {
 
   const { codecOptions, mime } = transcode(type);
 
-  const output = await tmpPath(type, id, streamIndex);
+  const output = await tmpPath(id, type, streamIndex);
 
   const cmd = 'ffmpeg';
   const args = [
@@ -121,7 +121,7 @@ const transcodeStream = () => async (req, res, next) => {
     postProcess(
       mime,
       output,
-      await cachePath(type, id, streamIndex),
+      await cachePath(id, type, streamIndex),
     );
   };
 

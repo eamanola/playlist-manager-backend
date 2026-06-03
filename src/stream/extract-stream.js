@@ -17,7 +17,7 @@ const extractStream = async (id, type, streamIndex) => {
 
   const { codecOptions, mime } = await copy(type, path, Number(streamIndex));
 
-  const output = await cachePath(type, id, streamIndex);
+  const output = await cachePath(id, type, streamIndex);
 
   const cmd = 'ffmpeg';
   const args = [
