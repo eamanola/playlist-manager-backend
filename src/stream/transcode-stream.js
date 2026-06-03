@@ -5,7 +5,7 @@ const { createWriteStream } = require('node:fs');
 const { utils } = require('automata-utils');
 
 const { cachePath, tmpPath } = require('./output-path');
-const { transcode } = require('./format');
+const { transcodeOptions } = require('./format');
 const tempCache = require('../temp-cache');
 
 const { logger } = utils;
@@ -88,7 +88,7 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart }) => {
   logger.info('-- transcode');
 
   const path = tempCache.getPath(id);
-  const { codecOptions, mime } = transcode(type);
+  const { codecOptions, mime } = transcodeOptions(type);
   const output = await tmpPath(id, type, streamIndex);
   const cmd = 'ffmpeg';
   const args = [

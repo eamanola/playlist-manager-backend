@@ -6,6 +6,7 @@ module.exports = () => express.static(`${CACHE_DIR}/media`, {
   fallthrough: false,
   immutable: true,
   maxAge: '1d',
+  // set mime ? seem to work without
   // setHeaders: (res, path, stat) => { console.log(path, stat); },
 });
 

@@ -1,14 +1,15 @@
 const { utils } = require('automata-utils');
 
-const probe = require('../cli/probe');
 const { createNotSupported } = require('../errors');
+const escapePath = require('../utils/escape-path');
+const exec = require('../cli/exec-promisified');
 
 const { logger } = utils;
 // [webm @ 0x5b58e2446340] Only VP8 or VP9 or AV1 video and Vorbis or Opus audio
 // and WebVTT subtitles are supported for WebM.
 // https://support.mozilla.org/en-US/kb/audio-and-video-firefox#w_audio-codecs
-const isWebm = (format) => /^webm$/iu.test(format);
-const isMp4 = (format) => /^mp4$/iu.test(format);
+const isWebm = (format) => /webm/iu.test(format);
+const isMp4 = (format) => /mp4/iu.test(format);
 const isMp3 = (format) => /^mp3$/iu.test(format);
 const isWebVTT = (format) => /^webvtt$/iu.test(format);
 const isAss = (format) => /^ass$/iu.test(format);
@@ -37,69 +38,80 @@ const isH264 = (codec) => /^h264$/iu.test(codec);
 //   ({ codec: c, format: f }) => c === codec && f === format,
 // );
 
-const mimeToExt = (mime) => {
-  const { type, format } = mime.match(/^(?<type>[^/]+)\/(?<format>.+)/u).groups;
+// stream are container based, not type
+const streamProbe = async (filePath, streamIndex) => {
+  const cmd = [
+    'ffprobe',
+    '-v error',
+    `-i "${escapePath(filePath)}"`,
+    '-show_entries stream=codec_type,codec_name:format=format_name',
+    `-select_streams ${streamIndex}`,
+    '-print_format json',
+  ].join(' ');
 
-  if (type === 'audio' && format === 'mp4') {
-    return 'm4a';
-  }
+  console.log(cmd);
+  const { stdout } = await exec(cmd);
 
-  return format;
+  console.log(stdout);
+  const results = JSON.parse(stdout);
+
+  const { codec_type: type, codec_name: codec } = results?.streams[0] || {};
+  const { format_name: format } = results?.format || {};
+
+  return { codec, format, type };
 };
 
 const audioMime = (format, codec = null) => {
-  if (codec) return `audio/${codec}`;
-
   if (isMp4(format)) return 'audio/mp4';
 
   if (isMp3(format)) return 'audio/mp3';
 
   if (isWebm(format)) return 'audio/webm';
 
-  return null;
+  if (codec) return `audio/${codec}`;
+
+  return 'audio/*';
 };
 
 const videoMime = (format, codec = null) => {
-  if (codec) return `video/${codec}`;
-
   if (isMp4(format)) return 'video/mp4';
 
   if (isWebm(format)) return 'video/webm';
 
-  return null;
+  if (codec) return `video/${codec}`;
+
+  return 'video/*';
 };
 
-const subtitleMime = (format) => {
-  if (isAss(format)) return 'text/ass';
+const subtitleMime = (codec) => {
+  if (isAss(codec)) return 'text/ass';
 
-  if (isWebVTT(format)) return 'text/vtt';
+  if (isWebVTT(codec)) return 'text/vtt';
 
-  return null;
+  return 'subtitles/*';
 };
 
 const audioCopyOptions = async (path, streamIndex) => {
-  const { audios, format } = await probe(path);
-  const { codec } = audios.find(({ index }) => index === streamIndex);
+  const { codec, format } = await streamProbe(path, streamIndex);
 
   let codecOptions;
   let mime;
 
   if (isMp3(codec)) {
-    codecOptions = '-c copy -f mp3';
-    mime = audioMime('mp3', null);
+    codecOptions = '-c:a copy -f mp3';
+    mime = audioMime('mp3');
   } else if (isAc3(codec)) {
     throw createNotSupported({ codec });
   } else if (isVorbis(codec) || isOpus(codec)) {
-    codecOptions = '-c copy -f webm';
-    mime = audioMime('webm', codec);
+    codecOptions = '-c:a copy -f webm';
+    mime = audioMime('webm');
   } else if (isMp4(format) || isAAC(codec)) {
-    codecOptions = '-c copy -f mp4';
+    codecOptions = '-c:a copy -f mp4';
     mime = audioMime('mp4');
   } else {
-    logger.warn('Unhandled audio codec / format?', codec, format);
+    logger.warn('defaulting audio to MP4', codec, format);
 
-    // default to
-    codecOptions = '-c copy -f mp4';
+    codecOptions = '-c:a copy -f mp4';
     mime = audioMime('mp4');
   }
 
@@ -109,9 +121,8 @@ const audioCopyOptions = async (path, streamIndex) => {
   };
 };
 
-const videoCopyOptions = async (path) => {
-  const { format, video } = await probe(path);
-  const { codec } = video;
+const videoCopyOptions = async (path, streamIndex) => {
+  const { codec, format } = await streamProbe(path, streamIndex);
 
   let codecOptions;
   let mime;
@@ -123,16 +134,15 @@ const videoCopyOptions = async (path) => {
   if (isHevc(codec) || isMSMpeg4v2(codec)) {
     throw createNotSupported({ codec });
   } if (isVP8(codec) || isVP9(codec) || isAV1(codec)) {
-    codecOptions = '-c copy -f webm';
+    codecOptions = '-c:v copy -f webm';
     mime = videoMime('webm', codec);
   } else if (isMp4(format) || isH264(codec)) {
-    codecOptions = '-c copy -f mp4';
+    codecOptions = '-c:v copy -f mp4';
     mime = videoMime('mp4');
   } else {
-    logger.warn('Unhandled video codec/format ?', codec, format);
+    logger.warn('defaulting video to MP4', codec, format);
 
-    // default to
-    codecOptions = '-c copy -f mp4';
+    codecOptions = '-c:v copy -f mp4';
     mime = videoMime('mp4');
   }
 
@@ -143,22 +153,21 @@ const videoCopyOptions = async (path) => {
 };
 
 const subTitleCopyOptions = async (path, streamIndex) => {
-  const probes = await probe(path);
-  const subtitle = probes.subtitles.find(({ index }) => index === streamIndex);
-  const { codec } = subtitle;
+  const { codec } = await streamProbe(path, streamIndex);
 
   let codecOptions;
   let mime;
 
   if (isWebVTT(codec)) {
-    codecOptions = '-c copy -f webvtt';
-    mime = subtitleMime('webvtt');
+    codecOptions = '-c:s copy -f webvtt';
+    mime = subtitleMime(codec);
   } else if (isAss(codec)) {
-    codecOptions = '-c copy -f ass';
-    mime = subtitleMime('ass');
+    codecOptions = '-c:s copy -f ass';
+    mime = subtitleMime(codec);
   } else {
     console.warn('defaulting to ass', codec);
-    codecOptions = '-c copy -f ass';
+
+    codecOptions = '-c:s copy -f ass';
     mime = subtitleMime('ass');
   }
 
@@ -168,7 +177,7 @@ const subTitleCopyOptions = async (path, streamIndex) => {
   };
 };
 
-const copy = async (type, path, streamIndex) => {
+const copyOptions = async (type, path, streamIndex) => {
   if (type === 'audio') {
     return audioCopyOptions(path, streamIndex);
   }
@@ -178,13 +187,13 @@ const copy = async (type, path, streamIndex) => {
   }
 
   if (type === 'video') {
-    return videoCopyOptions(path);
+    return videoCopyOptions(path, streamIndex);
   }
 
   return null;
 };
 
-const transcode = (type) => {
+const transcodeOptions = (type) => {
   let codecOptions;
   let mime;
 
@@ -220,33 +229,33 @@ const transcode = (type) => {
   };
 };
 
-const mimeType = async (type, path) => {
-  const { format } = await probe(path);
+// const mimeType = async (type, path) => {
+//   const ANY_STREAM = 0;
+//   const { format } = await streamProbe(path, ANY_STREAM);
 
-  let mime;
-  switch (type) {
-    case 'audio':
-      mime = audioMime(format);
-      break;
+//   let mime;
+//   switch (type) {
+//     case 'audio':
+//       mime = audioMime(format);
+//       break;
 
-    case 'subtitle':
-      mime = subtitleMime(format);
-      break;
+//     case 'subtitle':
+//       mime = subtitleMime(format);
+//       break;
 
-    case 'video':
-      mime = videoMime(format);
-      break;
+//     case 'video':
+//       mime = videoMime(format);
+//       break;
 
-    default:
-      throw new Error(`Unknown type: ${type}`);
-  }
+//     default:
+//       throw new Error(`Unknown type: ${type}`);
+//   }
 
-  return mime;
-};
+//   return mime;
+// };
 
 module.exports = {
-  copy,
-  mimeToExt,
-  mimeType,
-  transcode,
+  copyOptions,
+  // mimeType,
+  transcodeOptions,
 };
