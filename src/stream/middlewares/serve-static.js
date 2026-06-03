@@ -7,7 +7,19 @@ module.exports = () => express.static(`${CACHE_DIR}/media`, {
   immutable: true,
   maxAge: '1d',
   // set mime ? seem to work without
-  // setHeaders: (res, path, stat) => { console.log(path, stat); },
+  setHeaders: (res, path/* , stat */) => {
+    const type = path.split('/').reverse()[1];
+
+    if ([
+      'audio',
+      // font has extension and handled by express.static
+      // 'font',
+      'subtitle',
+      'video',
+    ].includes(type)) {
+      res.setHeader('content-type', `${type}/*`);
+    }
+  },
 });
 
 // router.use('/:id/:type/:filename', (err, req, res, next) => {
