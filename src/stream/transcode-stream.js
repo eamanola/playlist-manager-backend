@@ -85,11 +85,12 @@ const postProcess = (mime, tmpFile, cacheFile) => {
   }
 };
 
-const transcodeStream = (type) => async (req, res, next) => {
+const transcodeStream = () => async (req, res, next) => {
   logger.info('-- transcode');
 
   const { params } = req;
-  const { id, streamIndex } = params;
+  const { id, type, streamIndex } = params;
+
   const path = tempCache.getPath(id);
 
   const { codecOptions, mime } = transcode(type);
@@ -125,6 +126,8 @@ const transcodeStream = (type) => async (req, res, next) => {
   };
 
   res.setHeader('content-type', mime);
+  res.setHeader('transfer-encoding', 'chunked');
+  res.setHeader('connection', 'keep-alive');
 
   const cache = createWriteStream(output);
   const proc = spawn([cmd, ...args].join(' '), null, { shell: true });
@@ -139,7 +142,7 @@ const transcodeStream = (type) => async (req, res, next) => {
       logger.info(proc.pid, 'removing tmp files');
       rm(output);
 
-      next({ message: 'transcode failed' });
+      next(new Error('Transcode failed'));
     } else {
       onSuccess();
     }
@@ -158,6 +161,9 @@ const transcodeStream = (type) => async (req, res, next) => {
 
     const HEAD_START = 0;
     setTimeout(() => {
+      // User navigates away - end transcoding
+      // TODO: client temporarily closes the connection.
+      // is this necessary?
       logger.info(proc.pid, 'exitCode', proc.exitCode);
       if (proc.exitCode === null) {
         logger.info(proc.pid, 'killing');

@@ -1,24 +1,24 @@
 const {
   errors,
-  // utils
+  // utils,
 } = require('automata-utils');
 
-const canAccess = require('../utils/can-access');
-const cache = require('../temp-cache');
+const canAccess = require('../../utils/can-access');
+const cache = require('../../temp-cache');
 
 const { accessDenied } = errors;
 
 // const { logger } = utils;
 
-const checkAccess = (req, res, next) => {
+const checkAccess = () => (req, res, next) => {
   const { params } = req;
 
   const { id } = params;
   const path = cache.getPath(id);
 
-  let error = null;
+  // logger.info('-- check access', id);
 
-  // logger.info('-- check access', path);
+  let error = null;
 
   if (!canAccess(path)) {
     error = accessDenied;

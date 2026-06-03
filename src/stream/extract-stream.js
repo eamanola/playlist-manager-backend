@@ -1,21 +1,18 @@
 const { rm } = require('node:fs/promises');
-const { exec } = require('node:child_process');
-const { createReadStream } = require('node:fs');
 
 const { utils } = require('automata-utils');
 
 const escapePath = require('../utils/escape-path');
 const { cachePath } = require('./output-path');
 const { copy } = require('./format');
+const exec = require('../cli/exec-promisified');
 const cache = require('../temp-cache');
 
 const { logger } = utils;
 
-const extractStream = (type) => async (req, res, next) => {
-  logger.info('-- extract');
-  const { params } = req;
+const extractStream = async (id, type, streamIndex) => {
+  logger.info('-- extract', type, id);
 
-  const { id, streamIndex } = params;
   const path = cache.getPath(id);
 
   const { codecOptions, mime } = await copy(type, path, Number(streamIndex));
@@ -33,19 +30,15 @@ const extractStream = (type) => async (req, res, next) => {
     ...codecOptions.split(' '),
     `"${escapePath(output)}"`,
   ];
-  logger.info('-', [cmd, ...args].join(' '));
 
-  exec([cmd, ...args].join(' '), async (err) => {
-    if (err) {
-      rm(output);
-      next(err);
-      return;
-    }
-
-    res.setHeader('content-type', mime);
-    res.status(200);
-    createReadStream(output).pipe(res);
-  });
+  try {
+    logger.info('-', [cmd, ...args].join(' '));
+    await exec([cmd, ...args].join(' '));
+    return { mime, output };
+  } catch (err) {
+    rm(output);
+    throw err;
+  }
 };
 
 module.exports = extractStream;
