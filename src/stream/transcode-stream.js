@@ -85,7 +85,7 @@ const postProcess = (mime, tmpFile, cacheFile) => {
 };
 
 const transcodeStream = async (id, type, streamIndex, { onError, onStart }) => {
-  logger.info('-- transcode');
+  logger.info('-- transcode', type, id);
 
   const path = tempCache.getPath(id);
   const { codecOptions, mime } = transcodeOptions(type);
