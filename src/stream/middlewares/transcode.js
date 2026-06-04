@@ -14,6 +14,7 @@ module.exports = () => async (req, res, next) => {
     transcoder = proc;
 
     // send out to browser
+    res.status(200);
     res.setHeader('content-type', mime);
     res.setHeader('transfer-encoding', 'chunked');
     res.setHeader('connection', 'keep-alive');
