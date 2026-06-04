@@ -21,6 +21,7 @@ const isVP9 = (codec) => /^vp9$/iu.test(codec);
 const isAV1 = (codec) => /^av1$/iu.test(codec);
 const isHevc = (codec) => /^hevc$/iu.test(codec);
 const isAc3 = (codec) => /^ac3$/iu.test(codec);
+const isEac3 = (codec) => /^eac3$/iu.test(codec);
 const isMSMpeg4v2 = (codec) => /^msmpeg4v2$/iu.test(codec);
 const isAAC = (codec) => /^aac$/iu.test(codec);
 const isH264 = (codec) => /^h264$/iu.test(codec);
@@ -102,7 +103,7 @@ const audioCopyOptions = async (path, streamIndex) => {
   if (isMp3(codec)) {
     codecOptions = '-c:a copy -f mp3';
     mime = audioMime('mp3');
-  } else if (isAc3(codec)) {
+  } else if (isAc3(codec) || isEac3(codec)) {
     throw createNotSupported({ codec });
   } else if (isVorbis(codec) || isOpus(codec)) {
     codecOptions = '-c:a copy -f webm';
