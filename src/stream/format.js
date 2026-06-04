@@ -68,6 +68,8 @@ const audioMime = (format, codec = null) => {
 
   if (isWebm(format)) return 'audio/webm';
 
+  if (isOpus(format)) return 'audio/ogg';
+
   if (codec) return `audio/${codec}`;
 
   return 'audio/*';
@@ -199,8 +201,8 @@ const transcodeOptions = (type) => {
 
   switch (type) {
     case 'audio':
-      codecOptions = '-c:a libmp3lame -f mp3';
-      mime = audioMime('mp3');
+      codecOptions = '-c:a libopus -ac 2 -f opus';
+      mime = audioMime('opus');
       break;
 
     case 'subtitle':
