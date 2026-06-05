@@ -1,11 +1,11 @@
-const { exec, spawn } = require('node:child_process');
+const { spawn } = require('node:child_process');
 const { rm, rename } = require('node:fs/promises');
 const { createWriteStream } = require('node:fs');
 
 const { utils } = require('automata-utils');
 
 const { cachePath, tmpPath } = require('./output-path');
-const { transcodeOptions } = require('./format');
+const { formatOptions, transcodeOptions } = require('./format');
 const tempCache = require('../temp-cache');
 
 const { logger } = utils;
@@ -56,33 +56,33 @@ const { logger } = utils;
 const postProcess = (type, format, tmpFile, cacheFile) => {
   logger.info('-- post-process:');
 
-  if (type === 'video' && format === 'mp4') {
-    logger.info('--- moving moov:');
+  // if (type === 'video' && format === 'mp4') {
+  //   logger.info('--- moving moov:');
 
-    const cmd1 = 'ffmpeg';
-    const args1 = [
-      '-y',
-      '-i',
-      `"${tmpFile}"`,
-      '-c:v',
-      'copy',
-      '-f',
-      'mp4',
-      `"${cacheFile}"`,
-    ];
+  //   const cmd1 = 'ffmpeg';
+  //   const args1 = [
+  //     '-y',
+  //     '-i',
+  //     `"${tmpFile}"`,
+  //     '-c:v',
+  //     'copy',
+  //     '-f',
+  //     'mp4',
+  //     `"${cacheFile}"`,
+  //   ];
 
-    const command = [cmd1, ...args1].join(' ');
-    logger.info('---', command);
-    exec([cmd1, ...args1].join(' '), (moveErr) => {
-      logger.info(moveErr || '--- moved');
+  //   const command = [cmd1, ...args1].join(' ');
+  //   logger.info('---', command);
+  //   exec([cmd1, ...args1].join(' '), (moveErr) => {
+  //     logger.info(moveErr || '--- moved');
 
-      logger.info('--- removing tmp files');
-      rm(tmpFile);
-    });
-  } else {
-    logger.info('--- move tmp files to cache');
-    rename(tmpFile, cacheFile);
-  }
+  //     logger.info('--- removing tmp files');
+  //     rm(tmpFile);
+  //   });
+  // } else {
+  logger.info('--- move tmp files to cache');
+  rename(tmpFile, cacheFile);
+  // }
 };
 
 const transcodeStream = async (id, type, streamIndex, { onError, onStart }) => {
@@ -91,6 +91,7 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart }) => {
   const path = tempCache.getPath(id);
 
   const { encoder, encoderOpts, format } = transcodeOptions(type);
+  const { formatOpts } = formatOptions(format);
 
   const cmd = 'ffmpeg';
   const args = [
@@ -111,6 +112,7 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart }) => {
     ...encoderOpts.split(' '),
     '-f',
     format,
+    ...(formatOpts || '').split(' '),
     // `"${output}"`,
     'pipe:1',
   ];

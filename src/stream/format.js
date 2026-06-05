@@ -19,7 +19,7 @@ const codecs = {
   av1: { format: 'webm', mime: 'video/AV1' },
   eac3: null,
   h264: { format: 'mp4', mime: 'video/H264' },
-  hevc: null,
+  hevc: { format: 'mp4', mime: 'video/hevc' },
   mp3: { format: 'mp3', mime: 'audio/mp3' }, /* 1 */
   msmpeg4v2: null,
   opus: { format: 'opus', mime: 'audio/ogg' }, /* 1 */
@@ -43,7 +43,7 @@ const codecOptions = (codec) => {
 const encoders = {
   h264: {
     encoder: 'h264_nvenc',
-    encoderOpts: '-pix_fmt yuv420p -movflags frag_keyframe+empty_moov -preset slow',
+    encoderOpts: '-pix_fmt yuv420p -preset slow',
     format: 'mp4',
   },
   mp3: {
@@ -64,6 +64,13 @@ const encoders = {
 };
 
 const encoderOptions = (codec) => encoders[codec] || null;
+
+const formats = {
+  mp4: { formatOpts: ' -movflags frag_keyframe+empty_moov' },
+  webm: { formatOpts: ' -cues_to_front 1' },
+};
+
+const formatOptions = (format) => formats[format] || {};
 
 const streamProbe = async (filePath, streamIndex) => {
   const cmd = [
@@ -187,6 +194,7 @@ const transcodeOptions = (type) => {
 
 module.exports = {
   copyOptions,
+  formatOptions,
   mime,
   streamProbe,
   transcodeOptions,

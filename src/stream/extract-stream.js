@@ -4,7 +4,7 @@ const { utils } = require('automata-utils');
 
 const escapePath = require('../utils/escape-path');
 const { cachePath } = require('./output-path');
-const { copyOptions, streamProbe } = require('./format');
+const { copyOptions, formatOptions, streamProbe } = require('./format');
 const exec = require('../cli/exec-promisified');
 const cache = require('../temp-cache');
 
@@ -17,6 +17,7 @@ const extractStream = async (id, type, streamIndex) => {
 
   const { codec } = await streamProbe(path, streamIndex);
   const { format } = copyOptions(type, codec);
+  const { formatOpts } = formatOptions(format);
 
   const output = await cachePath(id, type, streamIndex);
 
@@ -35,6 +36,7 @@ const extractStream = async (id, type, streamIndex) => {
     'copy',
     '-f',
     format,
+    ...(formatOpts || '').split(' '),
     `"${escapePath(output)}"`,
   ];
 
