@@ -54,10 +54,10 @@ const { logger } = utils;
 // };
 
 const postProcess = (type, format, tmpFile, cacheFile) => {
-  logger.info('post-process');
+  logger.info('-- post-process:');
 
   if (type === 'video' && format === 'mp4') {
-    logger.info('moving moov:');
+    logger.info('--- moving moov:');
 
     const cmd1 = 'ffmpeg';
     const args1 = [
@@ -70,16 +70,17 @@ const postProcess = (type, format, tmpFile, cacheFile) => {
       'mp4',
       `"${cacheFile}"`,
     ];
-    logger.info('-', [cmd1, ...args1].join(' '));
 
+    const command = [cmd1, ...args1].join(' ');
+    logger.info('---', command);
     exec([cmd1, ...args1].join(' '), (moveErr) => {
-      logger.info(moveErr);
+      logger.info(moveErr || '--- moved');
 
-      logger.info('removing tmp files');
+      logger.info('--- removing tmp files');
       rm(tmpFile);
     });
   } else {
-    logger.info('move tmp files to cache');
+    logger.info('--- move tmp files to cache');
     rename(tmpFile, cacheFile);
   }
 };
@@ -130,13 +131,6 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart }) => {
   proc.stderr.pipe(process.stdout);
   // proc.stderr.on('data', logProgress(proc));
 
-  const onSuccess = async () => postProcess(
-    type,
-    format,
-    output,
-    await cachePath(id, type, streamIndex),
-  );
-
   // done
   proc.on('close', (code, signal) => {
     const success = code === 0 && signal === null;
@@ -150,6 +144,12 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart }) => {
         onError(new Error('Transcode failed'));
       }
     } else {
+      const onSuccess = async () => postProcess(
+        type,
+        format,
+        output,
+        await cachePath(id, type, streamIndex),
+      );
       onSuccess();
     }
   });
