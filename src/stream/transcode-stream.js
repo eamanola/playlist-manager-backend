@@ -3,6 +3,7 @@ const { rm, rename } = require('node:fs/promises');
 const { createWriteStream } = require('node:fs');
 
 const { utils } = require('automata-utils');
+const kill = require('tree-kill');
 
 const { cachePath, tmpPath } = require('./output-path');
 const { formatOptions, transcodeOptions } = require('./format');
@@ -53,39 +54,7 @@ const { logger } = utils;
 //   }
 // };
 
-const postProcess = (type, format, tmpFile, cacheFile) => {
-  logger.info('-- post-process:');
-
-  // if (type === 'video' && format === 'mp4') {
-  //   logger.info('--- moving moov:');
-
-  //   const cmd1 = 'ffmpeg';
-  //   const args1 = [
-  //     '-y',
-  //     '-i',
-  //     `"${tmpFile}"`,
-  //     '-c:v',
-  //     'copy',
-  //     '-f',
-  //     'mp4',
-  //     `"${cacheFile}"`,
-  //   ];
-
-  //   const command = [cmd1, ...args1].join(' ');
-  //   logger.info('---', command);
-  //   exec([cmd1, ...args1].join(' '), (moveErr) => {
-  //     logger.info(moveErr || '--- moved');
-
-  //     logger.info('--- removing tmp files');
-  //     rm(tmpFile);
-  //   });
-  // } else {
-  logger.info('--- move tmp files to cache');
-  rename(tmpFile, cacheFile);
-  // }
-};
-
-const transcodeStream = async (id, type, streamIndex, { onError, onStart }) => {
+const transcodeStream = async (id, type, streamIndex, { onError, onStart, writeable }) => {
   logger.info('-- transcode', type, id);
 
   const path = tempCache.getPath(id);
@@ -129,6 +98,9 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart }) => {
   const cache = createWriteStream(output);
   proc.stdout.pipe(cache);
 
+  // send output to client
+  proc.stdout.pipe(writeable);
+
   // log -stats
   proc.stderr.pipe(process.stdout);
   // proc.stderr.on('data', logProgress(proc));
@@ -146,14 +118,31 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart }) => {
         onError(new Error('Transcode failed'));
       }
     } else {
-      const onSuccess = async () => postProcess(
-        type,
-        format,
-        output,
-        await cachePath(id, type, streamIndex),
-      );
+      const onSuccess = async () => {
+        const cacheFile = await cachePath(id, type, streamIndex);
+        logger.info(proc.pid, 'moving tmp files to cache');
+        rename(output, cacheFile);
+      };
       onSuccess();
     }
+  });
+
+  // clint closed connections
+  writeable.on('close', () => {
+    logger.info(proc.pid, 'connection closed');
+
+    const HEAD_START = 0;
+    setTimeout(() => {
+      // User navigates away - end transcoding
+      // TODO: client temporarily closes the connection.
+      // is this necessary?
+      logger.info(proc.pid, 'exitCode', proc.exitCode);
+      if (proc.exitCode === null) {
+        logger.info(proc.pid, 'killing proc');
+
+        kill(proc.pid, 'SIGKILL');
+      }
+    }, HEAD_START);
   });
 
   // cache.on('close', () => {

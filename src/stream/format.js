@@ -19,7 +19,7 @@ const codecs = {
   av1: { format: 'webm', mime: 'video/AV1' },
   eac3: null,
   h264: { format: 'mp4', mime: 'video/H264' },
-  hevc: { format: 'mp4', mime: 'video/hevc' },
+  hevc: null, /* { format: 'mp4', mime: 'video/hevc' }, /* 1 */
   mp3: { format: 'mp3', mime: 'audio/mp3' }, /* 1 */
   msmpeg4v2: null,
   opus: { format: 'opus', mime: 'audio/ogg' }, /* 1 */
@@ -82,7 +82,7 @@ const streamProbe = async (filePath, streamIndex) => {
     '-print_format json',
   ].join(' ');
 
-  logger.info(cmd);
+  // logger.info(cmd);
   const { stdout } = await exec(cmd);
 
   logger.info(stdout);
