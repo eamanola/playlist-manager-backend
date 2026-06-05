@@ -1,6 +1,7 @@
 const { createReadStream } = require('node:fs');
 
 const extractStream = require('../extract-stream');
+const { mime } = require('../format');
 
 module.exports = () => async (error, req, res, next) => {
   if (error?.status !== 404) {
@@ -12,9 +13,9 @@ module.exports = () => async (error, req, res, next) => {
   const { id, type, streamIndex } = params;
 
   try {
-    const { mime, output } = await extractStream(id, type, Number(streamIndex));
+    const { format, output } = await extractStream(id, type, Number(streamIndex));
 
-    res.setHeader('content-type', mime);
+    res.setHeader('content-type', mime(type, format));
 
     createReadStream(output).pipe(res);
     res.status(200);

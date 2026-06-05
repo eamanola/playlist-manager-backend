@@ -8,257 +8,186 @@ const { logger } = utils;
 // [webm @ 0x5b58e2446340] Only VP8 or VP9 or AV1 video and Vorbis or Opus audio
 // and WebVTT subtitles are supported for WebM.
 // https://support.mozilla.org/en-US/kb/audio-and-video-firefox#w_audio-codecs
-const isWebm = (format) => /webm/iu.test(format);
-const isMp4 = (format) => /mp4/iu.test(format);
-const isMp3 = (format) => /^mp3$/iu.test(format);
-const isWebVTT = (format) => /^webvtt$/iu.test(format);
-const isAss = (format) => /^ass$/iu.test(format);
+// https://www.iana.org/assignments/media-types/media-types.xhtml
+// undefined -> default
+// null -> transcode
+// 1 - not from iana
+const codecs = {
+  aac: { format: 'mp4', mime: 'audio/aac' },
+  ac3: null,
+  ass: { format: 'ass', mime: 'subtitle/ass' }, /* 1 */
+  av1: { format: 'webm', mime: 'video/AV1' },
+  eac3: null,
+  h264: { format: 'mp4', mime: 'video/H264' },
+  hevc: null,
+  mp3: { format: 'mp3', mime: 'audio/mp3' }, /* 1 */
+  msmpeg4v2: null,
+  opus: { format: 'opus', mime: 'audio/ogg' }, /* 1 */
+  vorbis: { format: 'webm', mime: 'audio/vorbis' },
+  vp8: { format: 'webm', mime: 'video/VP8' },
+  vp9: { format: 'webm', mime: 'video/VP9' },
+  webvtt: { format: 'webvtt', mime: 'subtitle/vtt' }, /* 1 */
+};
 
-const isVorbis = (codec) => /^vorbis$/iu.test(codec);
-const isOpus = (codec) => /^opus$/iu.test(codec);
-const isVP8 = (codec) => /^vp8$/iu.test(codec);
-const isVP9 = (codec) => /^vp9$/iu.test(codec);
-const isAV1 = (codec) => /^av1$/iu.test(codec);
-const isHevc = (codec) => /^hevc$/iu.test(codec);
-const isAc3 = (codec) => /^ac3$/iu.test(codec);
-const isEac3 = (codec) => /^eac3$/iu.test(codec);
-const isMSMpeg4v2 = (codec) => /^msmpeg4v2$/iu.test(codec);
-const isAAC = (codec) => /^aac$/iu.test(codec);
-const isH264 = (codec) => /^h264$/iu.test(codec);
+const codecOptions = (codec) => {
+  const options = codecs[codec];
 
-// const SKIP_WARNING = [
-//   // container swap ok
-//   // container swap ok
-//   { codec: 'flac', format: 'matroska,webm' },
-//   // container swap ok
-// ];
+  if (options === null) {
+    // known to fail, redirect to transcode
+    throw createNotSupported({ codec });
+  }
 
-// const skipWarning = (/*format, codec*/) => false;
+  return options || null;
+};
 
-//   SKIP_WARNING.some(
-//   ({ codec: c, format: f }) => c === codec && f === format,
-// );
+const encoders = {
+  h264: {
+    encoder: 'h264_nvenc',
+    encoderOpts: '-pix_fmt yuv420p -movflags frag_keyframe+empty_moov -preset slow',
+    format: 'mp4',
+  },
+  mp3: {
+    encoder: 'libmp3lame',
+    encoderOpts: null,
+    format: 'mp3',
+  },
+  opus: {
+    encoder: 'libopus',
+    encoderOpts: '-ac 2',
+    format: 'opus',
+  },
+  webvtt: {
+    encoder: '',
+    encoderOpts: '',
+    format: 'webvtt',
+  },
+};
 
-// stream are container based, not type
+const encoderOptions = (codec) => encoders[codec] || null;
+
 const streamProbe = async (filePath, streamIndex) => {
   const cmd = [
     'ffprobe',
     '-v error',
     `-i "${escapePath(filePath)}"`,
-    '-show_entries stream=codec_type,codec_name:format=format_name',
+    '-show_entries stream=codec_name',
     `-select_streams ${streamIndex}`,
     '-print_format json',
   ].join(' ');
 
-  console.log(cmd);
+  logger.info(cmd);
   const { stdout } = await exec(cmd);
 
-  console.log(stdout);
+  logger.info(stdout);
   const results = JSON.parse(stdout);
 
-  const { codec_type: type, codec_name: codec } = results?.streams[0] || {};
-  const { format_name: format } = results?.format || {};
+  const { codec_name: codec } = results?.streams[0] || {};
 
-  return { codec, format, type };
+  return { codec };
 };
 
-const audioMime = (format, codec = null) => {
-  if (isMp4(format)) return 'audio/mp4';
+const mime = (type, format) => {
+  let mimeType;
 
-  if (isMp3(format)) return 'audio/mp3';
-
-  if (isWebm(format)) return 'audio/webm';
-
-  if (isOpus(format)) return 'audio/ogg';
-
-  if (codec) return `audio/${codec}`;
-
-  return 'audio/*';
-};
-
-const videoMime = (format, codec = null) => {
-  if (isMp4(format)) return 'video/mp4';
-
-  if (isWebm(format)) return 'video/webm';
-
-  if (codec) return `video/${codec}`;
-
-  return 'video/*';
-};
-
-const subtitleMime = (codec) => {
-  if (isAss(codec)) return 'text/ass';
-
-  if (isWebVTT(codec)) return 'text/vtt';
-
-  return 'subtitles/*';
-};
-
-const audioCopyOptions = async (path, streamIndex) => {
-  const { codec, format } = await streamProbe(path, streamIndex);
-
-  let codecOptions;
-  let mime;
-
-  if (isMp3(codec)) {
-    codecOptions = '-c:a copy -f mp3';
-    mime = audioMime('mp3');
-  } else if (isAc3(codec) || isEac3(codec)) {
-    throw createNotSupported({ codec });
-  } else if (isVorbis(codec) || isOpus(codec)) {
-    codecOptions = '-c:a copy -f webm';
-    mime = audioMime('webm');
-  } else if (isMp4(format) || isAAC(codec)) {
-    codecOptions = '-c:a copy -f mp4';
-    mime = audioMime('mp4');
-  } else {
-    logger.warn('defaulting audio to MP4', codec, format);
-
-    codecOptions = '-c:a copy -f mp4';
-    mime = audioMime('mp4');
+  switch (format) {
+    case 'ass':
+      mimeType = 'subtitle/ass';
+      break;
+    case 'mp3':
+      mimeType = 'audio/mp3';
+      break;
+    case 'mp4':
+      mimeType = `${type}/mp4`;
+      break;
+    case 'opus':
+      mimeType = `${type}/ogg`;
+      break;
+    case 'webm':
+      mimeType = `${type}/webm`;
+      break;
+    case 'webvtt':
+      mimeType = 'subtitle/vtt';
+      break;
+    // for static
+    case null:
+      mimeType = `${type}/*`;
+      break;
+    default:
+      logger.warn(`Unhndled format mime: ${type}/${format}`);
+      mimeType = `${type}/*`;
+      break;
   }
 
-  return {
-    codecOptions,
-    mime,
-  };
+  return mimeType;
 };
 
-const videoCopyOptions = async (path, streamIndex) => {
-  const { codec, format } = await streamProbe(path, streamIndex);
-
-  let codecOptions;
-  let mime;
-
-  // hevc:
-  // (In some cases? limited support according to mdc)
-  // Firefox is capable to decode,
-  // but takes much longer than full transcode
-  if (isHevc(codec) || isMSMpeg4v2(codec)) {
-    throw createNotSupported({ codec });
-  } if (isVP8(codec) || isVP9(codec) || isAV1(codec)) {
-    codecOptions = '-c:v copy -f webm';
-    mime = videoMime('webm', codec);
-  } else if (isMp4(format) || isH264(codec)) {
-    codecOptions = '-c:v copy -f mp4';
-    mime = videoMime('mp4');
-  } else {
-    logger.warn('defaulting video to MP4', codec, format);
-
-    codecOptions = '-c:v copy -f mp4';
-    mime = videoMime('mp4');
-  }
-
-  return {
-    codecOptions,
-    mime,
-  };
-};
-
-const subTitleCopyOptions = async (path, streamIndex) => {
-  const { codec } = await streamProbe(path, streamIndex);
-
-  let codecOptions;
-  let mime;
-
-  if (isWebVTT(codec)) {
-    codecOptions = '-c:s copy -f webvtt';
-    mime = subtitleMime(codec);
-  } else if (isAss(codec)) {
-    codecOptions = '-c:s copy -f ass';
-    mime = subtitleMime(codec);
-  } else {
-    console.warn('defaulting to ass', codec);
-
-    codecOptions = '-c:s copy -f ass';
-    mime = subtitleMime('ass');
-  }
-
-  return {
-    codecOptions,
-    mime,
-  };
-};
-
-const copyOptions = async (type, path, streamIndex) => {
-  if (type === 'audio') {
-    return audioCopyOptions(path, streamIndex);
-  }
-
-  if (type === 'subtitle') {
-    return subTitleCopyOptions(path, streamIndex);
-  }
-
-  if (type === 'video') {
-    return videoCopyOptions(path, streamIndex);
-  }
-
-  return null;
-};
-
-const transcodeOptions = (type) => {
-  let codecOptions;
-  let mime;
-
+const copyDefaults = (type) => {
+  let format;
   switch (type) {
     case 'audio':
-      codecOptions = '-c:a libopus -ac 2 -f opus';
-      mime = audioMime('opus');
+      format = 'mp4';
       break;
 
     case 'subtitle':
-      codecOptions = '-f webvtt';
-      mime = subtitleMime('webvtt');
+      format = 'ass';
       break;
 
     case 'video':
-      codecOptions = [
-        '-c:v h264_nvenc',
-        '-pix_fmt yuv420p',
-        '-movflags frag_keyframe+empty_moov',
-        '-preset slow',
-        '-f mp4',
-      ].join(' ');
-      mime = videoMime('mp4');
+      format = 'mp4';
       break;
 
     default:
       throw new Error(`Unknown type: ${type}`);
   }
 
-  return {
-    codecOptions,
-    mime,
-  };
+  return { format };
 };
 
-// const mimeType = async (type, path) => {
-//   const ANY_STREAM = 0;
-//   const { format } = await streamProbe(path, ANY_STREAM);
+const copyOptions = (type, codec) => {
+  if (![
+    'audio',
+    'subtitle',
+    'video',
+  ].includes(type)) throw new Error(`Unknown type: ${type}`);
 
-//   let mime;
-//   switch (type) {
-//     case 'audio':
-//       mime = audioMime(format);
-//       break;
+  let options = codecOptions(codec);
 
-//     case 'subtitle':
-//       mime = subtitleMime(format);
-//       break;
+  if (!options) {
+    options = copyDefaults(type);
+    logger.warn(`Unhandled codec ${type}/${codec}: defaulting to ${options.format}`);
+  }
 
-//     case 'video':
-//       mime = videoMime(format);
-//       break;
+  const { format } = options;
 
-//     default:
-//       throw new Error(`Unknown type: ${type}`);
-//   }
+  return { format };
+};
 
-//   return mime;
-// };
+const transcodeOptions = (type) => {
+  let codec;
+
+  switch (type) {
+    case 'audio':
+      codec = 'opus';
+      break;
+
+    case 'subtitle':
+      codec = 'webvtt';
+      break;
+
+    case 'video':
+      codec = 'h264';
+      break;
+
+    default:
+      throw new Error(`Unknown type: ${type}`);
+  }
+
+  return encoderOptions(codec);
+};
 
 module.exports = {
   copyOptions,
-  // mimeType,
+  mime,
+  streamProbe,
   transcodeOptions,
 };

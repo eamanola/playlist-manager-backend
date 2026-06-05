@@ -1,6 +1,7 @@
 const express = require('express');
 
 const { CACHE_DIR } = require('../../config');
+const { mime } = require('../format');
 
 module.exports = () => express.static(`${CACHE_DIR}/media`, {
   fallthrough: false,
@@ -17,7 +18,7 @@ module.exports = () => express.static(`${CACHE_DIR}/media`, {
       'subtitle',
       'video',
     ].includes(type)) {
-      res.setHeader('content-type', `${type}/*`);
+      res.setHeader('content-type', mime(type, null));
     }
   },
 });

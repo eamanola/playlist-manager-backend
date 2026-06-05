@@ -4,7 +4,7 @@ const { utils } = require('automata-utils');
 
 const escapePath = require('../utils/escape-path');
 const { cachePath } = require('./output-path');
-const { copyOptions } = require('./format');
+const { copyOptions, streamProbe } = require('./format');
 const exec = require('../cli/exec-promisified');
 const cache = require('../temp-cache');
 
@@ -15,7 +15,8 @@ const extractStream = async (id, type, streamIndex) => {
 
   const path = cache.getPath(id);
 
-  const { codecOptions, mime } = await copyOptions(type, path, Number(streamIndex));
+  const { codec } = await streamProbe(path, streamIndex);
+  const { format } = copyOptions(type, codec);
 
   const output = await cachePath(id, type, streamIndex);
 
@@ -24,17 +25,24 @@ const extractStream = async (id, type, streamIndex) => {
     '-y',
     '-i',
     `"${escapePath(path)}"`,
-    '-map_chapters -1 -map_metadata -1',
+    '-map_chapters',
+    '-1',
+    '-map_metadata',
+    '-1',
     '-map',
     `0:${streamIndex}`,
-    ...codecOptions.split(' '),
+    `-c:${type[0].toLowerCase()}`,
+    'copy',
+    '-f',
+    format,
     `"${escapePath(output)}"`,
   ];
 
   try {
-    logger.info('-', [cmd, ...args].join(' '));
-    await exec([cmd, ...args].join(' '));
-    return { mime, output };
+    const command = [cmd, ...args].join(' ');
+    logger.info('---', command);
+    await exec(command);
+    return { format, output };
   } catch (err) {
     rm(output);
     throw err;

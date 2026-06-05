@@ -53,10 +53,10 @@ const { logger } = utils;
 //   }
 // };
 
-const postProcess = (mime, tmpFile, cacheFile) => {
+const postProcess = (type, format, tmpFile, cacheFile) => {
   logger.info('post-process');
 
-  if (mime === 'video/mp4') {
+  if (type === 'video' && format === 'mp4') {
     logger.info('moving moov:');
 
     const cmd1 = 'ffmpeg';
@@ -88,8 +88,9 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart }) => {
   logger.info('-- transcode', type, id);
 
   const path = tempCache.getPath(id);
-  const { codecOptions, mime } = transcodeOptions(type);
-  const output = await tmpPath(id, type, streamIndex);
+
+  const { encoder, encoderOpts, format } = transcodeOptions(type);
+
   const cmd = 'ffmpeg';
   const args = [
     '-y',
@@ -104,32 +105,37 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart }) => {
     '-1',
     '-map',
     `0:${streamIndex}`,
-    ...codecOptions.split(' '),
+    `-c:${type[0].toLowerCase()}`,
+    encoder,
+    ...encoderOpts.split(' '),
+    '-f',
+    format,
     // `"${output}"`,
     'pipe:1',
   ];
-  logger.info('-', [cmd, ...args].join(' '));
 
-  const onSuccess = async () => {
-    postProcess(
-      mime,
-      output,
-      await cachePath(id, type, streamIndex),
-    );
-  };
-
+  const command = [cmd, ...args].join(' ');
+  logger.info('---', command);
   const proc = spawn([cmd, ...args].join(' '), null, { shell: true });
   if (onStart) {
-    onStart({ mime, proc });
+    onStart({ format, proc });
   }
 
   // send out to file
+  const output = await tmpPath(id, type, streamIndex);
   const cache = createWriteStream(output);
   proc.stdout.pipe(cache);
 
   // log -stats
   proc.stderr.pipe(process.stdout);
   // proc.stderr.on('data', logProgress(proc));
+
+  const onSuccess = async () => postProcess(
+    type,
+    format,
+    output,
+    await cachePath(id, type, streamIndex),
+  );
 
   // done
   proc.on('close', (code, signal) => {

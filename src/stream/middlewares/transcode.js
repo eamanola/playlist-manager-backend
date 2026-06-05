@@ -2,6 +2,7 @@ const { utils } = require('automata-utils');
 const kill = require('tree-kill');
 
 const transcodeStream = require('../transcode-stream');
+const { mime } = require('../format');
 
 const { logger } = utils;
 
@@ -10,12 +11,12 @@ module.exports = () => async (req, res, next) => {
   const { id, type, streamIndex } = params;
 
   let transcoder;
-  const onStart = ({ mime, proc }) => {
+  const onStart = ({ format, proc }) => {
     transcoder = proc;
 
     // send out to browser
     res.status(200);
-    res.setHeader('content-type', mime);
+    res.setHeader('content-type', mime(type, format));
     res.setHeader('transfer-encoding', 'chunked');
     res.setHeader('connection', 'keep-alive');
     proc.stdout.pipe(res);
