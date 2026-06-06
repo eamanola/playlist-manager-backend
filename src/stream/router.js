@@ -15,13 +15,13 @@ const createRouter = () => {
 
   // check valid enum for type
   // one of audio, fonts, subtitle, video
-  router.use('{/transcode}/:id/:type', checkType());
+  router.use('/:id/:type{/transcode}', checkType());
 
   // access control (placeholder)
-  router.use('{/transcode}/:id', checkAccess());
+  router.use('/:id', checkAccess());
 
   // transcode stream
-  router.get('/transcode/:id/:type/:streamIndex', transcode());
+  router.get('/:id/:type/transcode/:streamIndex', transcode());
 
   // send processed
   // throws 404

@@ -106,7 +106,7 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
   }
 
   // send out to file
-  const tmpFile = `${await tmpFilePath(id, type, streamIndex)}.${proc.pid}`;
+  const tmpFile = `${await tmpFilePath(id, type, streamIndex, { transcode: true })}.${proc.pid}`;
   const cacheFile = await cacheFilePath(id, type, streamIndex);
   const cache = createWriteStream(tmpFile);
   proc.stdout.pipe(cache);
