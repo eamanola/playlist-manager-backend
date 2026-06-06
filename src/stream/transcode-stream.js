@@ -90,7 +90,7 @@ const getOpts = ({ id, type, streamIndex }) => {
   return { command, format };
 };
 
-const transcodeStream = async (id, type, streamIndex, { onError, onStart, writeable }) => {
+const transcodeStream = async (id, type, streamIndex, { onEnd, onStart, writeable }) => {
   logger.info('-- transcode', type, id);
 
   const { command, format } = getOpts({ id, streamIndex, type });
@@ -133,11 +133,9 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
       logger.info(proc.pid, 'removing tmp files');
 
       rm(tmpFile);
-
-      if (onError) {
-        onError(new Error('Transcode failed'));
-      }
     }
+
+    if (onEnd) onEnd(success);
   });
 
   writeable.on('close', () => {

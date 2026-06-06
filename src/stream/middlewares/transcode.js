@@ -1,7 +1,7 @@
 const transcodeStream = require('../transcode-stream');
 const { mime } = require('../format');
 
-module.exports = () => async (req, res, next) => {
+module.exports = () => (req, res, next) => {
   const { params } = req;
   const { id, type, streamIndex } = params;
 
@@ -10,8 +10,11 @@ module.exports = () => async (req, res, next) => {
     res.status(200);
     res.setHeader('content-type', mime(type, format));
     res.setHeader('transfer-encoding', 'chunked');
-    res.setHeader('connection', 'keep-alive');
 
+    // ?
+    // res.setHeader('connection', 'keep-alive');
+
+    // ?
     const date = new Date();
     res.setHeader(
       'expires',
@@ -19,8 +22,14 @@ module.exports = () => async (req, res, next) => {
     );
   };
 
+  const onEnd = (success) => {
+    if (!success) {
+      next(new Error('Transcode failed'));
+    }
+  };
+
   try {
-    await transcodeStream(id, type, streamIndex, { onError: next, onStart, writeable: res });
+    transcodeStream(id, type, streamIndex, { onEnd, onStart, writeable: res });
   } catch (err) {
     next(err);
   }

@@ -6,6 +6,7 @@ const dumpFonts = require('../dump-fonts');
 const { notFound, methodNotAllowed } = require('../../errors');
 
 const { logger } = utils;
+
 module.exports = () => async (error, req, res, next) => {
   if (error?.status !== 404) {
     next(error);

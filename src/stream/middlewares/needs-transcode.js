@@ -11,7 +11,7 @@ module.exports = () => (err, req, res, next) => {
   const { params } = req;
   const { id, type, streamIndex } = params;
 
-  logger.info(`forward ${type} to transcode: ${id}`);
+  logger.info(`-- forward ${type} to transcode: ${id}`);
 
   const serverUrl = `${req.protocol}://${req.get('Host')}`;
   res.setHeader('Location', `${serverUrl}/stream/${id}/${type}/transcode/${streamIndex}`);
