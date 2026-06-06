@@ -54,6 +54,8 @@ const { logger } = utils;
 //   }
 // };
 
+const actives = [];
+
 const transcodeStream = async (id, type, streamIndex, { onError, onStart, writeable }) => {
   logger.info('-- transcode', type, id);
 
@@ -89,12 +91,16 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
   const command = [cmd, ...args].join(' ');
   logger.info('---', command);
   const proc = spawn([cmd, ...args].join(' '), null, { shell: true });
+
+  actives.push(proc.pid);
+  logger.info('....actives: ', ...actives);
+
   if (onStart) {
     onStart({ format, proc });
   }
 
   // send out to file
-  const output = await tmpPath(id, type, streamIndex);
+  const output = `${await tmpPath(id, type, streamIndex)}.${proc.pid}`;
   const cache = createWriteStream(output);
   proc.stdout.pipe(cache);
 
@@ -105,26 +111,33 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
   proc.stderr.pipe(process.stdout);
   // proc.stderr.on('data', logProgress(proc));
 
-  // done
-  proc.on('close', (code, signal) => {
+  proc.on('exit', (code, signal) => {
+    console.log(proc.pid, 'proc exit', 'code:', code, 'signal:', signal);
+    actives.splice(actives.indexOf(proc.pid), 1);
+    logger.info('....actives:', ...actives);
+
     const success = code === 0 && signal === null;
-    logger.info(proc.pid, 'proc close:', 'success:', success, 'code:', code, 'signal:', signal);
-
-    if (!success) {
-      logger.info(proc.pid, 'removing tmp files');
-      rm(output);
-
-      if (onError) {
-        onError(new Error('Transcode failed'));
-      }
-    } else {
+    if (success) {
       const onSuccess = async () => {
         const cacheFile = await cachePath(id, type, streamIndex);
         logger.info(proc.pid, 'moving tmp files to cache');
         rename(output, cacheFile);
       };
       onSuccess();
+    } else if (!success) {
+      logger.info(proc.pid, 'removing tmp files');
+      rm(output);
+
+      if (onError) {
+        onError(new Error('Transcode failed'));
+      }
     }
+  });
+
+  // all done
+  proc.on('close', (code, signal) => {
+    const success = code === 0 && signal === null;
+    logger.info(proc.pid, 'proc close:', 'success:', success, 'code:', code, 'signal:', signal);
   });
 
   // clint closed connections
@@ -147,10 +160,6 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
 
   // cache.on('close', () => {
   //   console.log(proc.pid, 'cache closed');
-  // });
-
-  // proc.on('exit', (code, signal) => {
-  //   console.log(proc.pid, 'proc exit', 'code:', code, 'signal:', signal);
   // });
 };
 
