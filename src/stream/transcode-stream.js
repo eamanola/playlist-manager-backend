@@ -93,10 +93,10 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
   const proc = spawn([cmd, ...args].join(' '), null, { shell: true });
 
   actives.push(proc.pid);
-  logger.info('....actives: ', ...actives);
+  logger.info('--- actives: ', ...actives);
 
   if (onStart) {
-    onStart({ format, proc });
+    onStart({ format });
   }
 
   // send out to file
@@ -112,9 +112,9 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
   // proc.stderr.on('data', logProgress(proc));
 
   proc.on('exit', (code, signal) => {
-    console.log(proc.pid, 'proc exit', 'code:', code, 'signal:', signal);
+    logger.info(proc.pid, 'proc exit', 'code:', code, 'signal:', signal);
     actives.splice(actives.indexOf(proc.pid), 1);
-    logger.info('....actives:', ...actives);
+    logger.info('--- actives:', ...actives);
 
     const success = code === 0 && signal === null;
     if (success) {
@@ -151,7 +151,7 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
       // is this necessary?
       logger.info(proc.pid, 'exitCode', proc.exitCode);
       if (proc.exitCode === null) {
-        logger.info(proc.pid, 'killing proc');
+        logger.info(proc.pid, 'SIGKILL proc');
 
         kill(proc.pid, 'SIGKILL');
       }
@@ -159,7 +159,7 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
   });
 
   // cache.on('close', () => {
-  //   console.log(proc.pid, 'cache closed');
+  //   logger.info(proc.pid, 'cache closed');
   // });
 };
 
