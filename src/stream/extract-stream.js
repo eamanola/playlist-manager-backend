@@ -3,7 +3,7 @@ const { rm } = require('node:fs/promises');
 const { utils } = require('automata-utils');
 
 const escapePath = require('../utils/escape-path');
-const { cachePath } = require('./output-path');
+const { cacheFilePath } = require('./output-path');
 const { copyOptions, formatOptions, streamProbe } = require('./format');
 const exec = require('../cli/exec-promisified');
 const cache = require('../temp-cache');
@@ -19,7 +19,7 @@ const extractStream = async (id, type, streamIndex) => {
   const { format } = copyOptions(type, codec);
   const { formatOpts } = formatOptions(format);
 
-  const output = await cachePath(id, type, streamIndex);
+  const output = await cacheFilePath(id, type, streamIndex);
 
   const cmd = 'ffmpeg';
   const args = [

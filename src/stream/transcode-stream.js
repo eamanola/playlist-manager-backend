@@ -5,7 +5,7 @@ const { createWriteStream } = require('node:fs');
 const { utils } = require('automata-utils');
 const kill = require('tree-kill');
 
-const { cachePath, tmpPath } = require('./output-path');
+const { cacheFilePath, tmpFilePath } = require('./output-path');
 const { formatOptions, transcodeOptions } = require('./format');
 const tempCache = require('../temp-cache');
 
@@ -106,8 +106,8 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
   }
 
   // send out to file
-  const tmpFile = `${await tmpPath(id, type, streamIndex)}.${proc.pid}`;
-  const cacheFile = await cachePath(id, type, streamIndex);
+  const tmpFile = `${await tmpFilePath(id, type, streamIndex)}.${proc.pid}`;
+  const cacheFile = await cacheFilePath(id, type, streamIndex);
   const cache = createWriteStream(tmpFile);
   proc.stdout.pipe(cache);
 
