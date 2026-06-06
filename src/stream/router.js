@@ -24,17 +24,17 @@ const createRouter = () => {
   router.get('/transcode/:id/:type/:streamIndex', transcode());
 
   // send processed
+  // throws 404
   router.use(serveStatic());
 
-  // 404: font error handling
+  // 404 handling: fonts
   router.use('/:id/fonts/:filename', dumpFonts());
 
-  // 404: video, audio, subtitle error handling
+  // 404 handling: video, audio, subtitle
+  // throws 415
   router.use('/:id/:type/:streamIndex', extractStream());
 
-  // codec known to fail
-  // 415: thrown by formats
-  // browser cant handle original codec, redirect to transcode
+  // 415 handling: redirect to transcode
   router.use('/:id/:type/:streamIndex', needsTranscode());
 
   return router;

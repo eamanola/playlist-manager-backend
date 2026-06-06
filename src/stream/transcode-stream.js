@@ -56,9 +56,7 @@ const { logger } = utils;
 
 const actives = [];
 
-const transcodeStream = async (id, type, streamIndex, { onError, onStart, writeable }) => {
-  logger.info('-- transcode', type, id);
-
+const getOpts = ({ id, type, streamIndex }) => {
   const path = tempCache.getPath(id);
 
   const { encoder, encoderOpts, format } = transcodeOptions(type);
@@ -87,46 +85,53 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
     // `"${output}"`,
     'pipe:1',
   ];
-
   const command = [cmd, ...args].join(' ');
+
+  return { command, format };
+};
+
+const transcodeStream = async (id, type, streamIndex, { onError, onStart, writeable }) => {
+  logger.info('-- transcode', type, id);
+
+  const { command, format } = getOpts({ id, streamIndex, type });
+
   logger.info('---', command);
-  const proc = spawn([cmd, ...args].join(' '), null, { shell: true });
+  const proc = spawn(command, null, { shell: true });
 
   actives.push(proc.pid);
-  logger.info('--- actives: ', ...actives);
+  if (actives.length > 2) logger.warn(actives.length, 'transcoders active');
 
   if (onStart) {
     onStart({ format });
   }
 
   // send out to file
-  const output = `${await tmpPath(id, type, streamIndex)}.${proc.pid}`;
-  const cache = createWriteStream(output);
+  const tmpFile = `${await tmpPath(id, type, streamIndex)}.${proc.pid}`;
+  const cacheFile = await cachePath(id, type, streamIndex);
+  const cache = createWriteStream(tmpFile);
   proc.stdout.pipe(cache);
 
-  // send output to client
+  // send out to client
   proc.stdout.pipe(writeable);
 
-  // log -stats
+  // set logs/stats to stdout
   proc.stderr.pipe(process.stdout);
   // proc.stderr.on('data', logProgress(proc));
 
   proc.on('exit', (code, signal) => {
-    logger.info(proc.pid, 'proc exit', 'code:', code, 'signal:', signal);
-    actives.splice(actives.indexOf(proc.pid), 1);
-    logger.info('--- actives:', ...actives);
-
     const success = code === 0 && signal === null;
+    logger.info(proc.pid, 'proc exit', 'success:', success, 'code:', code, 'signal:', signal);
+
+    actives.splice(actives.indexOf(proc.pid), 1);
+
     if (success) {
-      const onSuccess = async () => {
-        const cacheFile = await cachePath(id, type, streamIndex);
-        logger.info(proc.pid, 'moving tmp files to cache');
-        rename(output, cacheFile);
-      };
-      onSuccess();
+      logger.info(proc.pid, 'moving tmp files to cache');
+
+      rename(tmpFile, cacheFile);
     } else if (!success) {
       logger.info(proc.pid, 'removing tmp files');
-      rm(output);
+
+      rm(tmpFile);
 
       if (onError) {
         onError(new Error('Transcode failed'));
@@ -134,30 +139,30 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
     }
   });
 
-  // all done
-  proc.on('close', (code, signal) => {
-    const success = code === 0 && signal === null;
-    logger.info(proc.pid, 'proc close:', 'success:', success, 'code:', code, 'signal:', signal);
-  });
-
-  // clint closed connections
   writeable.on('close', () => {
-    logger.info(proc.pid, 'connection closed');
+    logger.info(proc.pid, 'client closed connection');
 
-    const HEAD_START = 0;
+    const HEAD_START = 50;
     setTimeout(() => {
-      // User navigates away - end transcoding
-      // TODO: client temporarily closes the connection.
-      // is this necessary?
+      // Known Use cases:
+      // 1) everything went well - no kill needed
+      // 2) User navigates away from media page - kill / and restart transcode later ok
+      // 3) User pauses media for too long - kill forces restart of transcode from 0:00
+      // // TODO: better/a way to handle this
       logger.info(proc.pid, 'exitCode', proc.exitCode);
       if (proc.exitCode === null) {
-        logger.info(proc.pid, 'SIGKILL proc');
+        logger.info(proc.pid, 'SIGTERM proc');
 
-        kill(proc.pid, 'SIGKILL');
+        kill(proc.pid, 'SIGTERM');
       }
     }, HEAD_START);
   });
 
+  // all done
+  // proc.on('close', (code, signal) => {
+  //   const success = code === 0 && signal === null;
+  //   logger.info(proc.pid, 'proc close:', 'success:', success, 'code:', code, 'signal:', signal);
+  // });
   // cache.on('close', () => {
   //   logger.info(proc.pid, 'cache closed');
   // });
