@@ -12,6 +12,15 @@ module.exports = () => async (error, req, res, next) => {
   const { params } = req;
   const { id, type, streamIndex } = params;
 
+  if (![
+    'audio',
+    'subtitle',
+    'video',
+  ].includes(type)) {
+    next(error);
+    return;
+  }
+
   try {
     const { format, output } = await extractStream(id, type, Number(streamIndex));
 

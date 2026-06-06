@@ -28,6 +28,7 @@ const createRouter = () => {
   router.use(serveStatic());
 
   // 404 handling: fonts
+  // throws 404, 405
   router.use('/:id/fonts/:filename', dumpFonts());
 
   // 404 handling: video, audio, subtitle

@@ -1,8 +1,8 @@
 const express = require('express');
-const { middlewares } = require('automata-utils');
+const { middlewares, errors, utils } = require('automata-utils');
 
 const { THUMB_DIR } = require('./config');
-const errors = require('./errors');
+const appErrors = require('./errors');
 const { router: createThumbnails } = require('./create-thumbnails');
 const { router: probes } = require('./probes');
 const { router: play } = require('./play');
@@ -11,6 +11,7 @@ const { router: videos } = require('./videos');
 const { router: stream } = require('./stream');
 
 const { errorHandler } = middlewares;
+const { logger } = utils;
 
 const router = ({ db }) => {
   const expressRouter = express.Router();
@@ -26,7 +27,15 @@ const router = ({ db }) => {
     expressRouter.use('/stream', stream());
   }
 
-  expressRouter.use(errorHandler(errors, { defaultTo500: false }));
+  expressRouter.use((err, req, res, next) => {
+    if (err) {
+      logger.warn(err);
+    }
+
+    next(err);
+  });
+
+  expressRouter.use(errorHandler({ ...errors, ...appErrors }, { defaultTo500: false }));
 
   return expressRouter;
 };

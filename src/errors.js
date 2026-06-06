@@ -20,9 +20,16 @@ const createNotSupported = ({ codec }) => ({
   message: `${codec} not supported by browser, please transcode`,
 });
 
+const methodNotAllowed = {
+  message: 'Method Not Allowed',
+  name: 'methodNotAllowed',
+  status: 405,
+};
+
 module.exports = {
   createNotFound,
   createNotSupported,
+  methodNotAllowed,
   notFound,
   notSupported,
 };

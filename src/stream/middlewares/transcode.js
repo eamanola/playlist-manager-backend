@@ -22,7 +22,6 @@ module.exports = () => async (req, res, next) => {
   try {
     await transcodeStream(id, type, streamIndex, { onError: next, onStart, writeable: res });
   } catch (err) {
-    console.log(err);
     next(err);
   }
 };

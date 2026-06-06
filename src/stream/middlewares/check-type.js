@@ -1,6 +1,6 @@
-const { utils } = require('automata-utils');
+const { errors } = require('automata-utils');
 
-const { logger } = utils;
+const { createParamError } = errors;
 
 module.exports = () => (req, res, next) => {
   const { params } = req;
@@ -12,9 +12,9 @@ module.exports = () => (req, res, next) => {
     'subtitle',
     'video',
   ].includes(type)) {
-    logger.warn('access denied', type);
-    res.status(400);
-    res.send(null);
+    next(createParamError({
+      message: `type must be one of audio, fonts, subtitle, or video, was: ${type}`,
+    }));
     return;
   }
 

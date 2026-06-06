@@ -3,9 +3,9 @@ const { createReadStream, statSync } = require('node:fs');
 const { utils } = require('automata-utils');
 
 const dumpFonts = require('../dump-fonts');
+const { notFound, methodNotAllowed } = require('../../errors');
 
 const { logger } = utils;
-
 module.exports = () => async (error, req, res, next) => {
   if (error?.status !== 404) {
     next(error);
@@ -29,13 +29,10 @@ module.exports = () => async (error, req, res, next) => {
       res.status(200);
       res.send(null);
     } else {
-      res.status(405);
-      res.send('Method Not Allowed');
+      next(methodNotAllowed);
     }
   } catch (err) {
     logger.warn(err);
-
-    res.status(404);
-    res.send('Not Found');
+    next(notFound);
   }
 };
