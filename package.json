@@ -1,6 +1,6 @@
 {
   "name": "playlist-manager-backend",
-  "version": "0.1.203",
+  "version": "0.1.204",
   "description": "",
   "main": "src/index.js",
   "scripts": {

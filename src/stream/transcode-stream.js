@@ -123,6 +123,7 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
     logger.info(proc.pid, 'proc exit', 'success:', success, 'code:', code, 'signal:', signal);
 
     actives.splice(actives.indexOf(proc.pid), 1);
+    logger.info(actives.length, 'active transcoders remain');
 
     if (success) {
       logger.info(proc.pid, 'moving tmp files to cache');
@@ -148,6 +149,15 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
       // 1) everything went well - no kill needed
       // 2) User navigates away from media page - kill / and restart transcode later ok
       // 3) User pauses media for too long - kill forces restart of transcode from 0:00
+      //  - reproduce: start transcode
+      //  - play few sec
+      //  - pause (repeat play/pause if necessary, maybe seek within buffer, toward the start)
+      //  - see transcoded has halted
+      //  - wait XXX (the transcode has)
+      //  - play to end of buffer, if transcode start, reapeat from start
+      //  - transcode wont start anymore
+      //
+      // NS_BINDING_ABORTED reload many time
       // // TODO: better/a way to handle this
       logger.info(proc.pid, 'exitCode', proc.exitCode);
       if (proc.exitCode === null) {
@@ -156,6 +166,16 @@ const transcodeStream = async (id, type, streamIndex, { onError, onStart, writea
         kill(proc.pid, 'SIGTERM');
       }
     }, HEAD_START);
+  });
+
+  proc.on('error', (err) => {
+    logger.info(proc.pid, 'proc error:', err);
+  });
+  cache.on('error', (err) => {
+    logger.info(proc.pid, 'cache error', err);
+  });
+  writeable.on('error', (err) => {
+    logger.info(proc.pid, 'connection error', err);
   });
 
   // all done

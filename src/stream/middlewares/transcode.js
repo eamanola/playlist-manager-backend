@@ -11,6 +11,12 @@ module.exports = () => async (req, res, next) => {
     res.setHeader('content-type', mime(type, format));
     res.setHeader('transfer-encoding', 'chunked');
     res.setHeader('connection', 'keep-alive');
+
+    const date = new Date();
+    res.setHeader(
+      'expires',
+      new Date(date.getFullYear(), date.getMonth(), date.getDay(), date.getHours() + 5).toString(),
+    );
   };
 
   try {
