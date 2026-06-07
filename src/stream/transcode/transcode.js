@@ -139,15 +139,15 @@ const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) =
     proc.stdout.resume();
   });
 
-  proc.on('error', (err) => {
-    logger.info(proc.pid, 'proc error:', err);
-  });
-  cache.on('error', (err) => {
-    logger.info(proc.pid, 'cache error', err);
-  });
-  writeable.on('error', (err) => {
-    logger.info(proc.pid, 'connection error', err);
-  });
+  // proc.on('error', (err) => {
+  //   logger.info(proc.pid, 'proc error:', err);
+  // });
+  // cache.on('error', (err) => {
+  //   logger.info(proc.pid, 'cache error', err);
+  // });
+  // writeable.on('error', (err) => {
+  //   logger.info(proc.pid, 'connection error', err);
+  // });
 
   // all done
   // proc.on('close', (code, signal) => {

@@ -5,14 +5,14 @@ const { logger } = utils;
 
 const activeProcs = [];
 
-const findProc = (id, type, streamIndex) => activeProcs.findIndex(
+const findIndex = (id, type, streamIndex) => activeProcs.findIndex(
   ({ id: aId, streamIndex: aStreamIndex, type: aType }) => (
     id === aId && streamIndex === aStreamIndex && type === aType
   ),
 );
 
 const onExit = ({ id, type, streamIndex }) => (/* code, signal */) => {
-  const procIndex = findProc(id, type, streamIndex);
+  const procIndex = findIndex(id, type, streamIndex);
 
   activeProcs.splice(procIndex, 1);
 
@@ -20,26 +20,26 @@ const onExit = ({ id, type, streamIndex }) => (/* code, signal */) => {
 };
 
 const onDublicate = ({
-  id, type, streamIndex, pid,
+  id, type, streamIndex, proc,
 }) => {
-  logger.warn(pid, 'is already handling', id, type, streamIndex);
+  logger.warn(proc.pid, 'is already handling', id, type, streamIndex);
 
   // TODO: handle dublicate requests
   // reproduce:
   // - reload player
 
-  kill(pid, 'SIGTERM');
+  kill(proc.pid, 'SIGTERM');
 };
 
 const addProc = (id, type, streamIndex, proc) => {
-  const runningIndex = findProc(id, type, streamIndex);
+  const runningIndex = findIndex(id, type, streamIndex);
   if (runningIndex !== -1) {
     const running = activeProcs[runningIndex];
     onDublicate(running);
   }
 
   const activeProc = {
-    id, pid: proc.pid, streamIndex, type,
+    id, proc, streamIndex, type,
   };
   activeProcs.push(activeProc);
 
