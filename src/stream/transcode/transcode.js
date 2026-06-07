@@ -1,6 +1,6 @@
 const { spawn } = require('node:child_process');
 const { rm, rename } = require('node:fs/promises');
-const { createWriteStream } = require('node:fs');
+const { createWriteStream, createReadStream } = require('node:fs');
 
 const { utils } = require('automata-utils');
 
@@ -88,22 +88,56 @@ const getOpts = ({ id, type, streamIndex }) => {
   return { command, format };
 };
 
+const procTmpFile = async (pid, id, type, streamIndex) => (
+  `${await tmpFilePath(id, type, streamIndex)}.${pid}`
+);
+
+const rePipe = async (proc, tmpFile, destination) => {
+  logger.info('--- attaching to running proc');
+
+  logger.info('---- pause proc');
+  proc.stdout.pause();
+
+  const encoded = createReadStream(tmpFile);
+
+  encoded.on('end', () => {
+    logger.info('---- available writen');
+
+    logger.info('---- attach to proc');
+    proc.stdout.pipe(destination);
+
+    logger.info('---- resume proc');
+    proc.stdout.resume();
+  });
+
+  logger.info('---- write available');
+  encoded.pipe(destination, { end: false });
+};
+
 const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) => {
   logger.info('-- transcode', type, id);
 
   const { command, format } = getOpts({ id, streamIndex, type });
+
+  if (onStart) {
+    onStart({ format });
+  }
+
+  const existing = manager.get(id, type, streamIndex);
+  if (existing !== null) {
+    const existingTmpFile = await procTmpFile(existing.pid, id, type, streamIndex);
+
+    rePipe(existing, existingTmpFile, writeable);
+    return;
+  }
 
   logger.info('---', command);
   const proc = spawn(command, null, { shell: true });
 
   manager.add(id, type, streamIndex, proc);
 
-  if (onStart) {
-    onStart({ format });
-  }
-
   // send out to file
-  const tmpFile = `${await tmpFilePath(id, type, streamIndex)}.${proc.pid}`;
+  const tmpFile = await procTmpFile(proc.pid, id, type, streamIndex);
   const cacheFile = await cacheFilePath(id, type, streamIndex);
   const cache = createWriteStream(tmpFile);
   proc.stdout.pipe(cache);

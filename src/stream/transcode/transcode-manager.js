@@ -48,6 +48,12 @@ const addProc = (id, type, streamIndex, proc) => {
   proc.on('exit', onExit(activeProc));
 };
 
+const getProc = (id, type, streamIndex) => {
+  const procIndex = findIndex(id, type, streamIndex);
+  return procIndex !== -1 ? activeProcs[procIndex].proc : null;
+};
+
 module.exports = {
   add: addProc,
+  get: getProc,
 };
