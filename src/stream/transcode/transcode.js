@@ -97,7 +97,7 @@ const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) =
   logger.info('---', command);
   const proc = spawn(command, null, { shell: true });
 
-  manager.add(proc);
+  manager.add(id, type, streamIndex, proc);
 
   if (onStart) {
     onStart({ format });
