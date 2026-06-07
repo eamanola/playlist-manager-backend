@@ -115,18 +115,18 @@ const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) =
   proc.stderr.pipe(process.stdout);
   // proc.stderr.on('data', logProgress(proc));
 
-  proc.on('exit', (code, signal) => {
+  proc.on('exit', async (code, signal) => {
     const success = code === 0 && signal === null;
     logger.info(proc.pid, 'proc exit', 'success:', success, 'code:', code, 'signal:', signal);
 
     if (success) {
       logger.info(proc.pid, 'moving tmp files to cache');
 
-      rename(tmpFile, cacheFile);
+      await rename(tmpFile, cacheFile);
     } else if (!success) {
       logger.info(proc.pid, 'removing tmp files');
 
-      rm(tmpFile);
+      await rm(tmpFile);
     }
 
     if (onEnd) onEnd(success);
