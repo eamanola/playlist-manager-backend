@@ -8,6 +8,7 @@ const kill = require('tree-kill');
 const { cacheFilePath, tmpFilePath } = require('../output-path');
 const { formatOptions, transcodeOptions } = require('../format');
 const tempCache = require('../../temp-cache');
+const manager = require('./transcode-manager');
 
 const { logger } = utils;
 
@@ -54,8 +55,6 @@ const { logger } = utils;
 //   }
 // };
 
-const actives = [];
-
 const getOpts = ({ id, type, streamIndex }) => {
   const path = tempCache.getPath(id);
 
@@ -98,8 +97,7 @@ const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) =
   logger.info('---', command);
   const proc = spawn(command, null, { shell: true });
 
-  actives.push(proc.pid);
-  if (actives.length > 2) logger.warn(actives.length, 'transcoders active');
+  manager.add(proc);
 
   if (onStart) {
     onStart({ format });
@@ -121,9 +119,6 @@ const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) =
   proc.on('exit', (code, signal) => {
     const success = code === 0 && signal === null;
     logger.info(proc.pid, 'proc exit', 'success:', success, 'code:', code, 'signal:', signal);
-
-    actives.splice(actives.indexOf(proc.pid), 1);
-    logger.info(actives.length, 'active transcoders remain');
 
     if (success) {
       logger.info(proc.pid, 'moving tmp files to cache');
