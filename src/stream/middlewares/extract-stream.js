@@ -22,7 +22,8 @@ module.exports = () => async (error, req, res, next) => {
   }
 
   try {
-    const { format, output } = await extractStream(id, type, Number(streamIndex));
+    const mediaStream = { id, streamIndex: Number(streamIndex), type };
+    const { format, output } = await extractStream(mediaStream);
 
     res.setHeader('content-type', mime(type, format));
 

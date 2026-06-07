@@ -10,12 +10,12 @@ const outputDir = async (id, type) => {
   return tempDir;
 };
 
-const cacheFilePath = async (id, type, streamIndex) => (
+const cacheFilePath = async ({ id, type, streamIndex }) => (
   join(await outputDir(id, type), `${streamIndex}`)
 );
 
-const tmpFilePath = async (id, type, streamIndex) => (
-  `${await cacheFilePath(id, type, streamIndex)}.tmp`
+const tmpFilePath = async (mediaStream) => (
+  `${await cacheFilePath(mediaStream)}.tmp`
 );
 
 module.exports = {

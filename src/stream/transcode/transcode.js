@@ -54,7 +54,7 @@ const { logger } = utils;
 //   }
 // };
 
-const getOpts = (id, type, streamIndex) => {
+const getOpts = ({ id, type, streamIndex }) => {
   const path = tempCache.getPath(id);
 
   const { encoder, encoderOpts, format } = transcodeOptions(type);
@@ -88,8 +88,8 @@ const getOpts = (id, type, streamIndex) => {
   return { command, format };
 };
 
-const procTmpFile = async (pid, id, type, streamIndex) => (
-  `${await tmpFilePath(id, type, streamIndex)}.${pid}`
+const procTmpFile = async (pid, mediaStream) => (
+  `${await tmpFilePath(mediaStream)}.${pid}`
 );
 
 const rePipe = async (proc, tmpFile, destination) => {
@@ -118,11 +118,11 @@ const rePipe = async (proc, tmpFile, destination) => {
   encoded.pipe(destination, { end: false });
 };
 
-const newTranscode = async (command, id, type, streamIndex, writeable) => {
+const newTranscode = async (command, mediaStream, writeable) => {
   logger.info('---', command);
   const proc = spawn(command, null, { shell: true });
 
-  const tmpFile = await procTmpFile(proc.pid, id, type, streamIndex);
+  const tmpFile = await procTmpFile(proc.pid, mediaStream);
 
   // send out to tmpFile
   const tmp = createWriteStream(tmpFile);
@@ -142,7 +142,7 @@ const newTranscode = async (command, id, type, streamIndex, writeable) => {
     if (success) {
       logger.info(proc.pid, 'moving tmp files to cache');
 
-      const cacheFile = await cacheFilePath(id, type, streamIndex);
+      const cacheFile = await cacheFilePath(mediaStream);
       await rename(tmpFile, cacheFile);
     } else if (!success) {
       logger.info(proc.pid, 'removing tmp files');
@@ -181,28 +181,28 @@ const newTranscode = async (command, id, type, streamIndex, writeable) => {
   return proc;
 };
 
-const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) => {
-  logger.info('-- transcode', type, id);
+const transcode = async (mediaStream, { onEnd, onStart, writeable }) => {
+  logger.info('-- transcode', mediaStream.type, mediaStream.id);
 
-  const { command, format } = getOpts(id, type, streamIndex);
+  const { command, format } = getOpts(mediaStream);
 
   if (onStart) {
     onStart({ format });
   }
 
   // on going transcode
-  const existing = manager.get(id, type, streamIndex);
+  const existing = manager.get(mediaStream);
   if (existing !== null) {
     logger.info('--- attaching to running proc');
-    const existingTmpFile = await procTmpFile(existing.pid, id, type, streamIndex);
+    const existingTmpFile = await procTmpFile(existing.pid, mediaStream);
 
     rePipe(existing, existingTmpFile, writeable);
     return;
   }
 
   logger.info('--- starting new proc');
-  const proc = await newTranscode(command, id, type, streamIndex, writeable);
-  manager.add(id, type, streamIndex, proc);
+  const proc = await newTranscode(command, mediaStream, writeable);
+  manager.add(mediaStream, proc);
 
   if (onEnd) {
     proc.on('exit', async (code, signal) => {

@@ -5,48 +5,44 @@ const { logger } = utils;
 
 const activeProcs = [];
 
-const findIndex = (id, type, streamIndex) => activeProcs.findIndex(
-  ({ id: aId, streamIndex: aStreamIndex, type: aType }) => (
-    id === aId && streamIndex === aStreamIndex && type === aType
+const findIndex = ({ id, type, streamIndex }) => activeProcs.findIndex(
+  ({ mediaStream }) => (
+    id === mediaStream.id && streamIndex === mediaStream.streamIndex && type === mediaStream.type
   ),
 );
 
-const onExit = ({ id, type, streamIndex }) => (/* code, signal */) => {
-  const procIndex = findIndex(id, type, streamIndex);
+const onExit = (mediaStream) => (/* code, signal */) => {
+  const procIndex = findIndex(mediaStream);
 
   activeProcs.splice(procIndex, 1);
 
   logger.info(activeProcs.length, 'active transcoders remain');
 };
 
-const onDublicate = ({
-  id, type, streamIndex, proc,
-}) => {
-  logger.warn(proc.pid, 'is already handling', id, type, streamIndex);
+const onDublicate = ({ mediaStream, proc }) => {
+  logger.warn(proc.pid, 'is already handling', mediaStream);
 
   logger.warn(proc.pid, 'killing', 'SIGTERM');
   kill(proc.pid, 'SIGTERM');
 };
 
-const addProc = (id, type, streamIndex, proc) => {
-  const runningIndex = findIndex(id, type, streamIndex);
+const addProc = (mediaStream, proc) => {
+  const runningIndex = findIndex(mediaStream);
   if (runningIndex !== -1) {
     const running = activeProcs[runningIndex];
     onDublicate(running);
   }
 
-  const activeProc = {
-    id, proc, streamIndex, type,
-  };
+  const activeProc = { mediaStream, proc };
   activeProcs.push(activeProc);
 
   if (activeProcs.length > 2) logger.warn(activeProcs.length, 'transcoders active');
 
-  proc.on('exit', onExit(activeProc));
+  proc.on('exit', onExit(mediaStream));
 };
 
-const getProc = (id, type, streamIndex) => {
-  const procIndex = findIndex(id, type, streamIndex);
+const getProc = (mediaStream) => {
+  const procIndex = findIndex(mediaStream);
   return procIndex !== -1 ? activeProcs[procIndex].proc : null;
 };
 

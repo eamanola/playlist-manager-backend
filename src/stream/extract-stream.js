@@ -10,7 +10,8 @@ const cache = require('../temp-cache');
 
 const { logger } = utils;
 
-const extractStream = async (id, type, streamIndex) => {
+const extractStream = async (mediaStream) => {
+  const { id, type, streamIndex } = mediaStream;
   logger.info('-- extract', type, id);
 
   const path = cache.getPath(id);
@@ -19,7 +20,7 @@ const extractStream = async (id, type, streamIndex) => {
   const { format } = copyOptions(type, codec);
   const { formatOpts } = formatOptions(format);
 
-  const output = await cacheFilePath(id, type, streamIndex);
+  const output = await cacheFilePath(mediaStream);
 
   const cmd = 'ffmpeg';
   const args = [

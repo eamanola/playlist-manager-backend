@@ -29,7 +29,8 @@ module.exports = () => (req, res, next) => {
   };
 
   try {
-    transcode(id, type, streamIndex, { onEnd, onStart, writeable: res });
+    const mediaStream = { id, streamIndex: Number(streamIndex), type };
+    transcode(mediaStream, { onEnd, onStart, writeable: res });
   } catch (err) {
     next(err);
   }
