@@ -24,10 +24,7 @@ const onDublicate = ({
 }) => {
   logger.warn(proc.pid, 'is already handling', id, type, streamIndex);
 
-  // TODO: handle dublicate requests
-  // reproduce:
-  // - reload player
-
+  logger.warn(proc.pid, 'killing', 'SIGTERM');
   kill(proc.pid, 'SIGTERM');
 };
 

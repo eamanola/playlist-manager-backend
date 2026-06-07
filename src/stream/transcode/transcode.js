@@ -54,7 +54,7 @@ const { logger } = utils;
 //   }
 // };
 
-const getOpts = ({ id, type, streamIndex }) => {
+const getOpts = (id, type, streamIndex) => {
   const path = tempCache.getPath(id);
 
   const { encoder, encoderOpts, format } = transcodeOptions(type);
@@ -93,10 +93,12 @@ const procTmpFile = async (pid, id, type, streamIndex) => (
 );
 
 const rePipe = async (proc, tmpFile, destination) => {
-  logger.info('--- attaching to running proc');
+  const wasPaused = proc.stdout.isPaused();
 
-  logger.info('---- pause proc');
-  proc.stdout.pause();
+  if (!wasPaused) {
+    logger.info('---- pausing proc');
+    proc.stdout.pause();
+  }
 
   const encoded = createReadStream(tmpFile);
 
@@ -106,46 +108,30 @@ const rePipe = async (proc, tmpFile, destination) => {
     logger.info('---- attach to proc');
     proc.stdout.pipe(destination);
 
-    logger.info('---- resume proc');
-    proc.stdout.resume();
+    if (!wasPaused) {
+      logger.info('---- resuming proc');
+      proc.stdout.resume();
+    }
   });
 
   logger.info('---- write available');
   encoded.pipe(destination, { end: false });
 };
 
-const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) => {
-  logger.info('-- transcode', type, id);
-
-  const { command, format } = getOpts({ id, streamIndex, type });
-
-  if (onStart) {
-    onStart({ format });
-  }
-
-  const existing = manager.get(id, type, streamIndex);
-  if (existing !== null) {
-    const existingTmpFile = await procTmpFile(existing.pid, id, type, streamIndex);
-
-    rePipe(existing, existingTmpFile, writeable);
-    return;
-  }
-
+const newTranscode = async (command, id, type, streamIndex, writeable) => {
   logger.info('---', command);
   const proc = spawn(command, null, { shell: true });
 
-  manager.add(id, type, streamIndex, proc);
-
-  // send out to file
   const tmpFile = await procTmpFile(proc.pid, id, type, streamIndex);
-  const cacheFile = await cacheFilePath(id, type, streamIndex);
-  const cache = createWriteStream(tmpFile);
-  proc.stdout.pipe(cache);
+
+  // send out to tmpFile
+  const tmp = createWriteStream(tmpFile);
+  proc.stdout.pipe(tmp);
 
   // send out to client
   proc.stdout.pipe(writeable);
 
-  // set logs/stats to stdout
+  // send -stats to stdout
   proc.stderr.pipe(process.stdout);
   // proc.stderr.on('data', logProgress(proc));
 
@@ -156,20 +142,20 @@ const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) =
     if (success) {
       logger.info(proc.pid, 'moving tmp files to cache');
 
+      const cacheFile = await cacheFilePath(id, type, streamIndex);
       await rename(tmpFile, cacheFile);
     } else if (!success) {
       logger.info(proc.pid, 'removing tmp files');
 
       await rm(tmpFile);
     }
-
-    if (onEnd) onEnd(success);
   });
 
   writeable.on('close', () => {
     logger.info(proc.pid, 'client closed connection');
 
     proc.stdout.unpipe(writeable);
+    // resume to finish, or pause?
     proc.stdout.resume();
   });
 
@@ -179,7 +165,7 @@ const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) =
   // cache.on('error', (err) => {
   //   logger.info(proc.pid, 'cache error', err);
   // });
-  // writeable.on('error', (err) => {
+  // destination.on('error', (err) => {
   //   logger.info(proc.pid, 'connection error', err);
   // });
 
@@ -191,6 +177,39 @@ const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) =
   // cache.on('close', () => {
   //   logger.info(proc.pid, 'cache closed');
   // });
+
+  return proc;
+};
+
+const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) => {
+  logger.info('-- transcode', type, id);
+
+  const { command, format } = getOpts(id, type, streamIndex);
+
+  if (onStart) {
+    onStart({ format });
+  }
+
+  // on going transcode
+  const existing = manager.get(id, type, streamIndex);
+  if (existing !== null) {
+    logger.info('--- attaching to running proc');
+    const existingTmpFile = await procTmpFile(existing.pid, id, type, streamIndex);
+
+    rePipe(existing, existingTmpFile, writeable);
+    return;
+  }
+
+  logger.info('--- starting new proc');
+  const proc = await newTranscode(command, id, type, streamIndex, writeable);
+  manager.add(id, type, streamIndex, proc);
+
+  if (onEnd) {
+    proc.on('exit', async (code, signal) => {
+      const success = code === 0 && signal === null;
+      onEnd(success);
+    });
+  }
 };
 
 module.exports = transcode;
