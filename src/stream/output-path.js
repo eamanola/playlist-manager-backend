@@ -1,22 +1,18 @@
-const { mkdir } = require('node:fs/promises');
+const { mkdirSync } = require('node:fs');
 const { join } = require('node:path');
 
 const { CACHE_DIR } = require('../config');
 
-const outputDir = async (id, type) => {
+const outputDir = (id, type) => {
   const tempDir = join(CACHE_DIR, 'media', id, type);
-  await mkdir(tempDir, { recursive: true });
+  mkdirSync(tempDir, { recursive: true });
 
   return tempDir;
 };
 
-const cacheFilePath = async ({ id, type, streamIndex }) => (
-  join(await outputDir(id, type), `${streamIndex}`)
-);
+const cacheFilePath = ({ id, type, streamIndex }) => join(outputDir(id, type), `${streamIndex}`);
 
-const tmpFilePath = async (mediaStream) => (
-  `${await cacheFilePath(mediaStream)}.tmp`
-);
+const tmpFilePath = (mediaStream) => `${cacheFilePath(mediaStream)}.tmp`;
 
 module.exports = {
   cacheFilePath,

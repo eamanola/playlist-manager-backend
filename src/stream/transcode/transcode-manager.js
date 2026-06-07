@@ -31,11 +31,9 @@ const nuke = (exitCode) => {
 // process.on('SIGINT', nuke);
 process.on('exit', nuke);
 
-const findIndex = ({ id, type, streamIndex }) => activeProcs.findIndex(
-  ({ mediaStream }) => (
-    id === mediaStream.id && streamIndex === mediaStream.streamIndex && type === mediaStream.type
-  ),
-);
+const findIndex = ({ id, type, streamIndex }) => activeProcs.findIndex(({ mediaStream }) => (
+  id === mediaStream.id && streamIndex === mediaStream.streamIndex && type === mediaStream.type
+));
 
 const onExit = (mediaStream) => (/* code, signal */) => {
   const procIndex = findIndex(mediaStream);

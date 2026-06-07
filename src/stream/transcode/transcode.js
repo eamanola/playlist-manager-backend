@@ -88,11 +88,9 @@ const getOpts = ({ id, type, streamIndex }) => {
   return { command, format };
 };
 
-const procTmpFile = async (pid, mediaStream) => (
-  `${await tmpFilePath(mediaStream)}.${pid}`
-);
+const procTmpFile = (pid, mediaStream) => `${tmpFilePath(mediaStream)}.${pid}`;
 
-const rePipe = async (proc, tmpFile, destination) => {
+const rePipe = (proc, mediaStream, destination) => {
   const wasPaused = proc.stdout.isPaused();
 
   if (!wasPaused) {
@@ -100,12 +98,13 @@ const rePipe = async (proc, tmpFile, destination) => {
     proc.stdout.pause();
   }
 
+  const tmpFile = procTmpFile(proc.pid, mediaStream);
   const encoded = createReadStream(tmpFile);
 
   encoded.on('end', () => {
-    logger.info('---- available writen');
+    logger.info('---- available written');
 
-    logger.info('---- attach to proc');
+    logger.info('---- attaching to proc');
     proc.stdout.pipe(destination);
 
     if (!wasPaused) {
@@ -118,51 +117,44 @@ const rePipe = async (proc, tmpFile, destination) => {
   encoded.pipe(destination, { end: false });
 };
 
-const newTranscode = async (command, mediaStream, writeable) => {
+const newTranscode = (command, mediaStream, destination) => {
   logger.info('---', command);
   const proc = spawn(command, null, { shell: true });
 
-  const tmpFile = await procTmpFile(proc.pid, mediaStream);
+  const tmpFile = procTmpFile(proc.pid, mediaStream);
 
   // send out to tmpFile
   const tmp = createWriteStream(tmpFile);
   proc.stdout.pipe(tmp);
 
-  // send out to client
-  proc.stdout.pipe(writeable);
+  // send out to destination
+  proc.stdout.pipe(destination);
 
   // send -stats to stdout
   proc.stderr.pipe(process.stdout);
   // proc.stderr.on('data', logProgress(proc));
 
-  proc.on('exit', async (code, signal) => {
+  proc.on('exit', (code, signal) => {
     const success = code === 0 && signal === null;
     logger.info(proc.pid, 'proc exit', 'success:', success, 'code:', code, 'signal:', signal);
 
     if (success) {
       logger.info(proc.pid, 'moving tmp files to cache');
 
-      const cacheFile = await cacheFilePath(mediaStream);
-      await rename(tmpFile, cacheFile);
-    } else if (!success) {
+      const cacheFile = cacheFilePath(mediaStream);
+      // note: rename is async
+      rename(tmpFile, cacheFile);
+    } else {
       logger.info(proc.pid, 'removing tmp files');
 
       rmSync(tmpFile);
     }
   });
 
-  writeable.on('close', () => {
-    logger.info(proc.pid, 'client closed connection');
-
-    proc.stdout.unpipe(writeable);
-    // resume to finish, or pause?
-    proc.stdout.resume();
-  });
-
   // proc.on('error', (err) => {
   //   logger.info(proc.pid, 'proc error:', err);
   // });
-  // cache.on('error', (err) => {
+  // tmp.on('error', (err) => {
   //   logger.info(proc.pid, 'cache error', err);
   // });
   // destination.on('error', (err) => {
@@ -174,42 +166,39 @@ const newTranscode = async (command, mediaStream, writeable) => {
   //   const success = code === 0 && signal === null;
   //   logger.info(proc.pid, 'proc close:', 'success:', success, 'code:', code, 'signal:', signal);
   // });
-  // cache.on('close', () => {
+  // tmp.on('close', () => {
   //   logger.info(proc.pid, 'cache closed');
   // });
 
   return proc;
 };
 
-const transcode = async (mediaStream, { onEnd, onStart, writeable }) => {
+const transcode = (mediaStream, destination) => {
   logger.info('-- transcode', mediaStream.type, mediaStream.id);
 
   const { command, format } = getOpts(mediaStream);
 
-  if (onStart) {
-    onStart({ format });
+  let proc = manager.get(mediaStream);
+  if (proc !== null) {
+    logger.info('--- attach to running proc');
+    rePipe(proc, mediaStream, destination);
+  } else {
+    logger.info('--- start new proc');
+    proc = newTranscode(command, mediaStream, destination);
+    manager.add(mediaStream, proc);
   }
 
-  // on going transcode
-  const existing = manager.get(mediaStream);
-  if (existing !== null) {
-    logger.info('--- attaching to running proc');
-    const existingTmpFile = await procTmpFile(existing.pid, mediaStream);
+  destination.on('close', () => {
+    logger.info(proc.pid, 'destination closed connection');
 
-    rePipe(existing, existingTmpFile, writeable);
-    return;
-  }
+    proc.stdout.unpipe(destination);
+    // TBD:
+    // - finish transcode, and send cache next time
+    // - pause transcode, and repipe if needed
+    proc.stdout.resume();
+  });
 
-  logger.info('--- starting new proc');
-  const proc = await newTranscode(command, mediaStream, writeable);
-  manager.add(mediaStream, proc);
-
-  if (onEnd) {
-    proc.on('close', async (code, signal) => {
-      const success = code === 0 && signal === null;
-      onEnd(success);
-    });
-  }
+  return { format };
 };
 
 module.exports = transcode;
