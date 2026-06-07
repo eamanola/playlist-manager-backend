@@ -5,9 +5,9 @@ const { createWriteStream } = require('node:fs');
 const { utils } = require('automata-utils');
 const kill = require('tree-kill');
 
-const { cacheFilePath, tmpFilePath } = require('./output-path');
-const { formatOptions, transcodeOptions } = require('./format');
-const tempCache = require('../temp-cache');
+const { cacheFilePath, tmpFilePath } = require('../output-path');
+const { formatOptions, transcodeOptions } = require('../format');
+const tempCache = require('../../temp-cache');
 
 const { logger } = utils;
 
@@ -90,7 +90,7 @@ const getOpts = ({ id, type, streamIndex }) => {
   return { command, format };
 };
 
-const transcodeStream = async (id, type, streamIndex, { onEnd, onStart, writeable }) => {
+const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) => {
   logger.info('-- transcode', type, id);
 
   const { command, format } = getOpts({ id, streamIndex, type });
@@ -162,6 +162,8 @@ const transcodeStream = async (id, type, streamIndex, { onEnd, onStart, writeabl
         logger.info(proc.pid, 'SIGTERM proc');
 
         kill(proc.pid, 'SIGTERM');
+        // proc.stdout.unpipe(writeable);
+        // proc.stdout.resume();
       }
     }, HEAD_START);
   });
@@ -186,4 +188,4 @@ const transcodeStream = async (id, type, streamIndex, { onEnd, onStart, writeabl
   // });
 };
 
-module.exports = transcodeStream;
+module.exports = transcode;

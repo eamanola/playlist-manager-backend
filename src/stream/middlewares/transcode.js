@@ -1,4 +1,4 @@
-const transcodeStream = require('../transcode-stream');
+const transcode = require('../transcode');
 const { mime } = require('../format');
 
 module.exports = () => (req, res, next) => {
@@ -29,7 +29,7 @@ module.exports = () => (req, res, next) => {
   };
 
   try {
-    transcodeStream(id, type, streamIndex, { onEnd, onStart, writeable: res });
+    transcode(id, type, streamIndex, { onEnd, onStart, writeable: res });
   } catch (err) {
     next(err);
   }
