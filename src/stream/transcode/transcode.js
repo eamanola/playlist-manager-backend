@@ -1,6 +1,6 @@
 const { spawn } = require('node:child_process');
-const { rm, rename } = require('node:fs/promises');
-const { createWriteStream, createReadStream } = require('node:fs');
+const { rename } = require('node:fs/promises');
+const { createWriteStream, createReadStream, rmSync } = require('node:fs');
 
 const { utils } = require('automata-utils');
 
@@ -147,7 +147,7 @@ const newTranscode = async (command, mediaStream, writeable) => {
     } else if (!success) {
       logger.info(proc.pid, 'removing tmp files');
 
-      await rm(tmpFile);
+      rmSync(tmpFile);
     }
   });
 
@@ -205,7 +205,7 @@ const transcode = async (mediaStream, { onEnd, onStart, writeable }) => {
   manager.add(mediaStream, proc);
 
   if (onEnd) {
-    proc.on('exit', async (code, signal) => {
+    proc.on('close', async (code, signal) => {
       const success = code === 0 && signal === null;
       onEnd(success);
     });
