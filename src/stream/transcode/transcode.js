@@ -3,7 +3,6 @@ const { rm, rename } = require('node:fs/promises');
 const { createWriteStream } = require('node:fs');
 
 const { utils } = require('automata-utils');
-const kill = require('tree-kill');
 
 const { cacheFilePath, tmpFilePath } = require('../output-path');
 const { formatOptions, transcodeOptions } = require('../format');
@@ -136,31 +135,8 @@ const transcode = async (id, type, streamIndex, { onEnd, onStart, writeable }) =
   writeable.on('close', () => {
     logger.info(proc.pid, 'client closed connection');
 
-    const HEAD_START = 50;
-    setTimeout(() => {
-      // Known Use cases:
-      // 1) everything went well - no kill needed
-      // 2) User navigates away from media page - kill / and restart transcode later ok
-      // 3) User pauses media for too long - kill forces restart of transcode from 0:00
-      //  - reproduce: start transcode
-      //  - play few sec
-      //  - pause (repeat play/pause if necessary, maybe seek within buffer, toward the start)
-      //  - see transcoded has halted
-      //  - wait XXX (the transcode has)
-      //  - play to end of buffer, if transcode start, reapeat from start
-      //  - transcode wont start anymore
-      //
-      // NS_BINDING_ABORTED reload many time
-      // // TODO: better/a way to handle this
-      logger.info(proc.pid, 'exitCode', proc.exitCode);
-      if (proc.exitCode === null) {
-        logger.info(proc.pid, 'SIGTERM proc');
-
-        kill(proc.pid, 'SIGTERM');
-        // proc.stdout.unpipe(writeable);
-        // proc.stdout.resume();
-      }
-    }, HEAD_START);
+    proc.stdout.unpipe(writeable);
+    proc.stdout.resume();
   });
 
   proc.on('error', (err) => {
