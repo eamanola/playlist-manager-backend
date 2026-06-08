@@ -23,7 +23,7 @@ module.exports = () => async (req, res, next) => {
 
   try {
     const mediaStream = { id, streamIndex: Number(streamIndex), type };
-    const { format, encoded, encoder } = transcode(mediaStream, res);
+    const { format, encoded, encoder } = transcode(mediaStream);
 
     res.on('close', () => {
       logger.info('connection closed');
@@ -53,6 +53,7 @@ module.exports = () => async (req, res, next) => {
       logger.info('---- encoded written');
     }
 
+    logger.info('pipe to encoder');
     encoder.stdout.pipe(res);
 
     if (!isPaused) {
