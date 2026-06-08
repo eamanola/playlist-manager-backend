@@ -1,6 +1,8 @@
 const { join } = require('node:path');
 // const util = require('node:util');
 
+const parser = require('media-filename-parser');
+
 const { MEDIA_LIBS } = require('./config');
 const findFiles = require('./cli/finder');
 const { createNotFound } = require('./errors');
@@ -29,8 +31,6 @@ const getFiles = async () => {
 };
 
 const parseMediaInfo = async (videoFiles) => {
-  const parser = await import('media-filename-parser');
-
   const parsedVideosFiles = videoFiles.map(({ mediaLib, videos }) => {
     const parsedVideos = videos.map(({ path, ...rest }) => {
       const subpath = path.replace(new RegExp(`^${mediaLib}/`, 'u'), '');
