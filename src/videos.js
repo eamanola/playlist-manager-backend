@@ -1,4 +1,4 @@
-const { join } = require('node:path');
+const { join, basename } = require('node:path');
 // const util = require('node:util');
 
 const parser = require('media-filename-parser');
@@ -71,6 +71,11 @@ const removePath = ({ videos, ...rest1 }) => ({
   ...rest1,
 });
 
+const renameMediaLibs = ({ mediaLib, ...rest }) => ({
+  ...rest,
+  mediaLib: basename(mediaLib),
+});
+
 const getVideos = async () => {
   try {
     const files = await getFiles();
@@ -91,9 +96,11 @@ const getVideos = async () => {
 
     const pathsRemoved = withId.map(removePath);
 
+    const mediaLibsRenamed = pathsRemoved.map(renameMediaLibs);
+
     // console.log(util.inspect(withId, {showHidden: false, depth: null, colors: true}));
     // console.log(util.inspect(videoFiles, {showHidden: false, depth: null, colors: true}));
-    return pathsRemoved;
+    return mediaLibsRenamed;
   } catch (err) {
     if (err.code === 'ENOENT') {
       throw createNotFound(err);
