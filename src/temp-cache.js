@@ -39,7 +39,7 @@ const init = async () => {
   set(await getFiles());
 };
 
-if (!cache) init();
+init();
 
 module.exports = {
   all: () => [...cache],
