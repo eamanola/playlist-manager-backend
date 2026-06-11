@@ -12,7 +12,8 @@ const addIds = (videos) => videos.map(({ name, path, ...rest }) => ({
 
 const adjustPath = (videos, index) => videos.map(({ name, path, ...rest }) => ({
   ...rest,
-  path: join(path.replace(new RegExp(`^${MEDIA_LIBS[index]}`, 'u'), ''), name),
+  path: join(path.replace(new RegExp(`^${MEDIA_LIBS[index]}`, 'u'), ''), name)
+    .replace(/^\//u, ''),
 }));
 
 const toMediaLibs = (videos, index) => ({
