@@ -11,7 +11,7 @@ let api;
 
 // This is quick test
 // Test files not provided
-// make sure MEDIA_LIBS contain 1 video
+// make sure MEDIA_LIBS contain 2 video
 // make sure config is setup
 
 describe('test paths', () => {
@@ -52,15 +52,25 @@ describe('test paths', () => {
   });
 
   describe('GET /probes', () => {
+    it('should fetch a single probe', async () => {
+      const all = (await api.get('/videos'))
+        .body
+        .map(({ videos }) => videos)
+        .flat();
+
+      const { body, status } = await api.get(`/probes?id=${all[0].id}`);
+      expect({ body, status }).toEqual({ body: expect.any(Array), status: 200 });
+    });
     it('should fetch a list', async () => {
       const all = (await api.get('/videos'))
         .body
         .map(({ videos }) => videos)
         .flat();
 
-      const ids = [all[0].id];
+      const ids = [all[0].id, all[1].id];
+      const query = ids.map((id) => `id=${id}`).join('&');
 
-      const { body, status } = await api.post('/probes').send(ids);
+      const { body, status } = await api.get(`/probes?${query}`);
       expect({ body, status }).toEqual({ body: expect.any(Array), status: 200 });
     });
 
@@ -71,8 +81,9 @@ describe('test paths', () => {
         .flat();
 
       const ids = [all[0].id];
+      const query = ids.map((id) => `id=${id}`).join('&');
 
-      const { body: probes } = await api.post('/probes').send(ids);
+      const { body: probes } = await api.get(`/probes?${query}`);
 
       const schema = yup.array().of(
         yup.object().shape({

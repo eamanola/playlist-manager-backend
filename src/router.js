@@ -16,7 +16,7 @@ const { logger } = utils;
 const router = ({ db }) => {
   const expressRouter = express.Router();
   expressRouter.post('/create-thumbnails', createThumbnails);
-  expressRouter.post('/probes', probes);
+  expressRouter.get('/probes', probes);
   expressRouter.put(['/play', '/play/:id'], play);
   expressRouter.use('/played', played({ db }));
   expressRouter.use('/thumbnails', express.static(THUMB_DIR));

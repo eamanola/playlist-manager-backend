@@ -12,10 +12,10 @@ const getProbes = async (ids) => {
 };
 
 const probes = async (req, res, next) => {
-  const { body: ids } = req;
+  const { id: ids } = req.query;
 
   try {
-    res.status(200).json(await getProbes(ids));
+    res.status(200).json(await getProbes(Array.isArray(ids) ? ids : [ids]));
     return true;
   } catch (err) {
     next(err);
