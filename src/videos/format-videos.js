@@ -1,7 +1,5 @@
 const { join, basename } = require('node:path');
 
-const mediaInfoParser = require('media-filename-parser');
-
 const { MEDIA_LIBS } = require('../config');
 const cache = require('../temp-cache');
 
@@ -12,32 +10,9 @@ const addIds = (videos) => videos.map(({ name, path, ...rest }) => ({
   path,
 }));
 
-const addMediaInfo = (videos, index) => videos.map(({ name, path, ...rest }) => {
-  const subpath = join(path, name).replace(new RegExp(`^${MEDIA_LIBS[index]}/`, 'u'), '');
-  const season = mediaInfoParser.season(subpath);
-  const title = mediaInfoParser.title(subpath);
-  const year = mediaInfoParser.year(subpath);
-  const episode = mediaInfoParser.episode(subpath);
-
-  return {
-    ...rest,
-    name,
-    path,
-    season,
-    title,
-    year,
-    ...episode,
-  };
-});
-
-const addFilename = (videos) => videos.map(({ name, ...rest }) => ({
+const adjustPath = (videos, index) => videos.map(({ name, path, ...rest }) => ({
   ...rest,
-  filename: name,
-  name,
-}));
-
-const removeNameAndPath = (videos) => videos.map(({ name, path, ...rest }) => ({
-  ...rest,
+  path: join(path.replace(new RegExp(`^${MEDIA_LIBS[index]}`, 'u'), ''), name),
 }));
 
 const toMediaLibs = (videos, index) => ({
@@ -46,17 +21,13 @@ const toMediaLibs = (videos, index) => ({
 });
 
 const formatVideos = (files) => {
-  const withIds = files.map(addIds);
-  const withMediaInfo = withIds.map(addMediaInfo);
-  const withFilename = withMediaInfo.map(addFilename);
-
-  const withoutNameAndPath = withFilename.map(removeNameAndPath);
-
-  const mediaLibs = withoutNameAndPath.map(toMediaLibs);
-
   // const util = require('node:util');
-  // console.log(util.inspect(mediaLibs, { colors: true, depth: null, showHidden: false }));
-  return mediaLibs;
+  let formatted = files.map(addIds);
+  formatted = formatted.map(adjustPath);
+  formatted = formatted.map(toMediaLibs);
+
+  // console.log(util.inspect(formatted, { colors: true, depth: null, showHidden: false }));
+  return formatted;
 };
 
 module.exports = formatVideos;

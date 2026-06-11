@@ -1,6 +1,6 @@
 {
   "name": "playlist-manager-backend",
-  "version": "0.1.230",
+  "version": "0.1.231",
   "description": "",
   "main": "src/index.js",
   "scripts": {
@@ -31,7 +31,6 @@
     "better-sqlite3": "^12.10.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "media-filename-parser": "github:eamanola/media-filename-parser",
     "tree-kill": "^1.2.2",
     "yup": "^1.7.1"
   }
