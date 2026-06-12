@@ -4,6 +4,7 @@ const { middlewares, errors, utils } = require('automata-utils');
 const { THUMB_DIR } = require('./config');
 const appErrors = require('./errors');
 const { router: createThumbnails } = require('./create-thumbnails');
+const { router: metas } = require('./metas');
 const { router: probes } = require('./probes');
 const { router: play } = require('./play');
 const { router: played } = require('./played');
@@ -16,6 +17,7 @@ const { logger } = utils;
 const router = ({ db }) => {
   const expressRouter = express.Router();
   expressRouter.post('/create-thumbnails', createThumbnails);
+  expressRouter.get('/metas', metas());
   expressRouter.get('/probes', probes);
   expressRouter.put(['/play', '/play/:id'], play);
   expressRouter.use('/played', played({ db }));
