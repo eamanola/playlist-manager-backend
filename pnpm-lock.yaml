@@ -207,9 +207,6 @@ importers:
 
   .:
     dependencies:
-      anilist:
-        specifier: ^0.12.4
-        version: 0.12.4
       automata-rest:
         specifier: github:eamanola/automata-rest
         version: git+https://git@github.com:eamanola/automata-rest.git#11ac71a404b34da2ace214323a47232a8ae3b822(better-sqlite3@12.10.0)
@@ -874,10 +871,6 @@ packages:
 
   ajv@6.15.0:
     resolution: {integrity: sha512-fgFx7Hfoq60ytK2c7DhnF8jIvzYgOMxfugjLOSMHjLIPgenqa7S7oaagATUq99mV6IYvN2tRmC0wnTYX6iPbMw==}
-
-  anilist@0.12.4:
-    resolution: {integrity: sha512-G4eWcnKlPUSWivwArGYltgranCC2gky+bZsTawz5aHQNN6XTBxYTGyIJXkLUVsxfw7HeLeG/9up3UU2z242y4w==}
-    engines: {node: '>=18'}
 
   ansi-escapes@4.3.2:
     resolution: {integrity: sha512-gKXj5ALrKWQLsYG9jlTRmR/xKluxHV+Z9QEwNIgCfM1/uwPMCuzVVnh5mwTd+OuBZcwSIMbqssNWRm1lE51QaQ==}
@@ -3089,10 +3082,6 @@ snapshots:
       json-schema-traverse: 0.4.1
       uri-js: 4.4.1
 
-  anilist@0.12.4:
-    dependencies:
-      tslib: 2.8.1
-
   ansi-escapes@4.3.2:
     dependencies:
       type-fest: 0.21.3
@@ -4717,7 +4706,8 @@ snapshots:
 
   tree-kill@1.2.2: {}
 
-  tslib@2.8.1: {}
+  tslib@2.8.1:
+    optional: true
 
   tunnel-agent@0.6.0:
     dependencies:

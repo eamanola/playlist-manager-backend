@@ -1,6 +1,6 @@
 {
   "name": "playlist-manager-backend",
-  "version": "0.1.236",
+  "version": "0.1.237",
   "description": "",
   "main": "src/index.js",
   "scripts": {
@@ -26,7 +26,6 @@
     "touch": "^3.1.1"
   },
   "dependencies": {
-    "anilist": "^0.12.4",
     "automata-rest": "github:eamanola/automata-rest",
     "automata-utils": "github:eamanola/automata-utils",
     "better-sqlite3": "^12.10.0",
