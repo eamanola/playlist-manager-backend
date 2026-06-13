@@ -1,17 +1,17 @@
 const { mkdir } = require('node:fs/promises');
 const { join } = require('node:path');
 
-const { errors, utils } = require('automata-utils');
+const { errors, logger } = require('automata-utils');
 
 const canAccess = require('./utils/can-access');
 const exists = require('./utils/exists');
 const thumbnail = require('./cli/thumbnail');
 const probe = require('./cli/probe');
 const { THUMB_DIR } = require('./config');
+const { notFound } = require('./errors');
 const cache = require('./temp-cache');
 
 const { accessDenied } = errors;
-const { logger } = utils;
 
 const cachePath = (id) => join(THUMB_DIR, `${id}.jpg`);
 
@@ -42,8 +42,8 @@ const generateThumbnails = async (list) => {
 
   await Promise.all((list || []).map((id) => {
     const path = cache.getPath(id);
-
-    if (path && !canAccess(path)) throw accessDenied;
+    if (!path) throw notFound;
+    else if (path && !canAccess(path)) throw accessDenied;
 
     return createThumbnail(id, path);
   }));

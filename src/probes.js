@@ -1,8 +1,14 @@
 const probe = require('./cli/probe');
+const { notFound } = require('./errors');
 const cache = require('./temp-cache');
 
 const getProbes = async (ids) => {
   const paths = ids.map((id) => cache.getPath(id));
+
+  if (paths.some((path) => !path)) {
+    throw notFound;
+  }
+
   const probes = await Promise.all(paths.map((path) => probe(path)));
 
   return probes.map((probeObj, index) => ({
