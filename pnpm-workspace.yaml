@@ -8,3 +8,21 @@ allowBuilds:
   media-filename-parser: true
 
 blockExoticSubdeps: false
+
+# local
+# overrides:
+#   automata-app: "file:../../automata/automata-app"
+#   automata-cache: "file:../../automata/automata-cache"
+#   automata-db: "file:../../automata/automata-db"
+#   automata-rest: "file:../../automata/automata-rest"
+#   automata-user-management: "file:../../automata/automata-user-management"
+#   automata-utils: "file:../../automata/automata-utils"
+
+# revert
+# overrides:
+#   automata-app: "github:eamanola/automata-app"
+#   automata-cache: "github:eamanola/automata-cache"
+#   automata-db: "github:eamanola/automata-db"
+#   automata-rest: "github:eamanola/automata-rest"
+#   automata-user-management: "github:eamanola/automata-user-management"
+#   automata-utils: "github:eamanola/automata-utils"
