@@ -1,0 +1,15 @@
+# old chromiums
+# https://www.chromium.org/getting-involved/download-chromium/#downloading-old-builds-of-chrome-chromium
+
+# tool download ?
+# npx @puppeteer/browsers install chromium@901912
+
+# direct download
+# https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html
+
+# revision numbers
+# https://github.com/puppeteer/puppeteer/releases?q=roll+to+Chromium
+# -> "chromium: roll to Chromium <version> (r<revision>) 
+
+
+
